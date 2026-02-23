@@ -14,6 +14,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zamza.Server.Domain", "Zamz
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zamza.Server.ConsumerApi", "Zamza.Server.ConsumerApi\Zamza.Server.ConsumerApi.csproj", "{061A58EF-F089-4538-9252-7A3AD841E197}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zamza.Server.DataAccess", "Zamza.Server.DataAccess\Zamza.Server.DataAccess.csproj", "{D3535847-53BD-4466-8C70-D3FB0771A080}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Migration test", "Migration test\Migration test.csproj", "{C1B84978-5B7D-4DED-89E5-8F8FD3702349}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,6 +27,8 @@ Global
 		{AE72329E-5F64-4251-8D45-E422C43FC33F} = {45001B82-EDA3-49FF-9220-86D4FA7A6452}
 		{8414BB81-06E8-4D6A-9EE6-9924FD8F78F2} = {AE72329E-5F64-4251-8D45-E422C43FC33F}
 		{061A58EF-F089-4538-9252-7A3AD841E197} = {AE72329E-5F64-4251-8D45-E422C43FC33F}
+		{D3535847-53BD-4466-8C70-D3FB0771A080} = {AE72329E-5F64-4251-8D45-E422C43FC33F}
+		{C1B84978-5B7D-4DED-89E5-8F8FD3702349} = {AE72329E-5F64-4251-8D45-E422C43FC33F}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{8414BB81-06E8-4D6A-9EE6-9924FD8F78F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -33,5 +39,13 @@ Global
 		{061A58EF-F089-4538-9252-7A3AD841E197}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{061A58EF-F089-4538-9252-7A3AD841E197}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{061A58EF-F089-4538-9252-7A3AD841E197}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3535847-53BD-4466-8C70-D3FB0771A080}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3535847-53BD-4466-8C70-D3FB0771A080}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3535847-53BD-4466-8C70-D3FB0771A080}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3535847-53BD-4466-8C70-D3FB0771A080}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C1B84978-5B7D-4DED-89E5-8F8FD3702349}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1B84978-5B7D-4DED-89E5-8F8FD3702349}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1B84978-5B7D-4DED-89E5-8F8FD3702349}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1B84978-5B7D-4DED-89E5-8F8FD3702349}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
