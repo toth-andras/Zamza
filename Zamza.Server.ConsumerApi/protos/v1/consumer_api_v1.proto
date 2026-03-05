@@ -1,0 +1,310 @@
+syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+package Zamza.ConsumerApi.V1;
+
+service ConsumerApiV1 {
+  // Gets messages for reprocessing attempt.
+  // Required gRPC metadata headers:
+  //  - authorization: Bearer <token>
+  rpc Fetch(FetchRequest) returns (FetchResponse);
+
+  // Saves the results of message processing.
+  // Required gRPC metadata headers:
+  //  - authorization: Bearer <token>
+  rpc Commit(CommitRequest) returns (CommitResponse);
+
+  // Tries to grant the consumer ownership over given partitions.
+  // Required gRPC metadata headers:
+  //  - authorization: Bearer <token>
+  rpc ClaimPartitionOwnership(ClaimPartitionOwnershipRequest) returns (ClaimPartitionOwnershipResponse);
+
+  // Ping request for Zamza availability check.
+  rpc Ping(PingRequest) returns (PingResponse);
+
+  // Removes the consumer from active consumers.
+  rpc Leave(LeaveRequest) returns (LeaveResponse);
+}
+
+// Represents the information about 
+// partition's current owner.
+message CurrentPartitionOwner {
+  // [required] Name of the topic.
+  string topic = 1;
+
+  // [required] Partition number.
+  int32 partition = 2;
+
+  // [required] Epoch of the current owner of the partition.
+  int64 owner_epoch = 3;
+}
+
+// Represents a Kafka message stored in Zamza.
+message ZamzaMessage {
+  // [required] The name of the consumer group whose
+  // member sent the message to Zamza.
+  string consumer_group = 1;
+
+  // [required] The topic of the original Kafka message.
+  string topic = 2;
+
+  // [required] The partition number of the original
+  // Kafka message.
+  int32 partition = 3;
+
+  // [required] The offset of the original Kafka message.
+  int64 offset = 4;
+
+  // Headers of the original Kafka message.
+  map<string, bytes> headers = 5;
+
+  // The key of the original Kafka message.
+  bytes key = 6;
+
+  // The value of the original Kafka message.
+  bytes value = 7;
+
+  // [required] The timestamp of the original Kafka message.
+  google.protobuf.Timestamp timestamp = 8;
+
+  // [required] The max number of reprocessing attempts.
+  // If exceeded, the message is considered to be poisoned.
+  int32 max_retries = 9;
+
+  // [required] The minimal time gap between two
+  // message reprocessing attempts.
+  int64 min_retries_gap_ms = 10;
+
+  // The period of time after which the processing of the message
+  // has no sense. The processing deadline is calculated from the
+  // moment the message was saved in Zamza. After the deadline,
+  // the message is considered to be poisoned.
+  google.protobuf.Int64Value processing_period_ms = 11;
+
+  // The number of retries that have been executed on the message.
+  int32 retries_count = 12;
+
+  // The reason for saving the message in Zamza, provided by client.
+  google.protobuf.StringValue retry_reason = 13;
+}
+
+message FetchRequest {
+  // [required] The unique identifier of the consumer. 
+  string consumer_id = 1;
+
+  // [required] The consumer group of the consumer.
+  string consumer_group = 2;
+
+  // [required] Not more than that many messages will
+  // be returned by Zamza.
+  int32 limit = 3;
+
+  repeated PartitionFetch partitions = 4;
+
+  // Represents a request for messages from a single partition.
+  message PartitionFetch {
+    // [required] The topic partition belongs to.
+    string topic = 1;
+
+    // [required] The partition number. 
+    int32 partition = 2;
+
+    // [required] The biggest offset that has 
+    // been commited in Kafka for the partition.
+    int64 kafka_offset = 3;
+
+    // [required] The consumer's ownership 
+    // epoch over the partition. 
+    int64 owner_epoch = 4;
+  }
+}
+message FetchResponse{
+  // The collection containing current owner epoch for all partitions
+  // of the consumer group.
+  repeated CurrentPartitionOwner current_partition_owners = 1;
+  oneof body {
+    // Is returned when some of the requested partitions are not
+    // owned by the consumer. 
+    FetchResponseOneOfPartitionOwnershipObsolete PartitionOwnershipObsolete = 2;
+
+    // Is returned when the consumer group has no permission to 
+    // consume messages from some of the given topics.
+    FetchResponseOneOfPermissionDenied PermissionDenied = 3;
+
+    FetchResponseOneOfOk Ok = 4;
+  }
+
+  message FetchResponseOneOfPartitionOwnershipObsolete {}
+  message FetchResponseOneOfPermissionDenied {
+    repeated string prohibited_topics = 1;
+  }
+  message FetchResponseOneOfOk {
+    repeated ZamzaMessage messages = 1;
+  }
+}
+
+message CommitRequest {
+  // [required] The unique identifier of the consumer. 
+  string consumer_id = 1;
+
+  // [required] The consumer group of the consumer.
+  string consumer_group = 2;
+
+  // The messages that should be removed from Zamza.
+  repeated ProcessedMessage processed_messages = 3;
+
+  // The messages that should be reprocessed in the future.
+  repeated FailedMessage failed_messages = 4;
+
+  // The messages that should be stored in Zamza but are
+  // no longer valid for processing retries.
+  repeated PoisonedMessage poisoned_messages = 5;
+
+  message ProcessedMessage {
+    // [required] The topic of the original Kafka message.
+    string topic = 1;
+
+    // [required] The partition number of the original Kafka message.
+    int32 partition = 2;
+
+    // [required] The offset of the original Kafka message.
+    int64 offset = 3;
+
+    // [required] The consumer's ownership 
+    // epoch over the partition. 
+    int64 owner_epoch = 4;
+  }
+  message FailedMessage {
+    // [required] The consumer's ownership 
+    // epoch over the partition. 
+    int64 owner_epoch = 1;
+
+    // [required] The message.
+    ZamzaMessage message = 2;
+  }
+  message PoisonedMessage {
+    // [required] The consumer's ownership 
+    // epoch over the partition. 
+    int64 owner_epoch = 1;
+
+    // [required] The message.
+    ZamzaMessage message = 2;
+  }
+}
+message CommitResponse {
+  // The collection containing current owner epoch for all partitions
+  // of the consumer group.
+  repeated CurrentPartitionOwner current_partition_owners = 1;
+
+  // Processing results for these messages were not saved because the 
+  // consumer no longer owns the required partitions.
+  repeated MessageOfUnownedPartition unowned_partitions_messages = 2;
+
+  // Processing results for these messages were not saved because the 
+  // consumer has no right to consume required topics.
+  repeated MessageOfProhibitedTopic prohibited_topics_messages = 3;
+
+  message MessageOfUnownedPartition {
+    // [required] The topic of the original Kafka message.
+    string topic = 1;
+
+    // [required] The partition number of the original Kafka message.
+    int32 partition = 2;
+
+    // [required] The offset of the original Kafka message.
+    int64 offset = 3;
+  }
+  message MessageOfProhibitedTopic {
+    // [required] The topic of the original Kafka message.
+    string topic = 1;
+
+    // [required] The partition number of the original Kafka message.
+    int32 partition = 2;
+
+    // [required] The offset of the original Kafka message.
+    int64 offset = 3;
+  }
+}
+
+message ClaimPartitionOwnershipRequest {
+  // [required] The unique identifier of the consumer. 
+  string consumer_id = 1;
+
+  // [required] The partition number of the original Kafka message.
+  string consumer_group = 2;
+
+  // The partitions the consumer tries to get ownership over.
+  repeated PartitionOwnershipClaim claims = 3;
+  
+  message PartitionOwnershipClaim {
+    // [required] The name of the topic.
+    string topic = 1;
+    
+    // [required] The number of the partition.
+    int32 partition = 2;
+    
+    // [required] The epoch of the previous 
+    // owner of the partition.
+    int64 known_owner_epoch = 3;
+  }
+}
+message ClaimPartitionOwnershipResponse {
+  // The collection containing current owner epoch for all partitions
+  // of the consumer group.
+  repeated CurrentPartitionOwner current_partition_owners = 1;
+  oneof body {
+    // Is returned when the consumer is no longer 
+    // the owner of some requested partitions.
+    ClaimPartitionOwnershipOneOfPartitionOwnershipObsolete PartitionOwnershipObsolete = 2;
+    
+    // Is returned when the consumer has no permission to consume 
+    // some of requested partitions' topics.
+    ClaimPartitionOwnershipOneOfPermissionDenied PermissionDenied = 3;
+    
+    ClaimPartitionOwnershipOneOfOk Ok = 4;
+  }
+
+  message ClaimPartitionOwnershipOneOfPartitionOwnershipObsolete{}
+  message ClaimPartitionOwnershipOneOfPermissionDenied {
+    repeated string prohibited_topics = 1;
+  }
+  message ClaimPartitionOwnershipOneOfOk {
+    // The collection of partitions the consumer 
+    // now has ownership over.
+    repeated GrantedPartitionOwnership owned_partitions = 1;
+    message GrantedPartitionOwnership {
+      // The name of the Kafka topic.
+      string topic = 1;
+      
+      // The number of partition.
+      int32 partition = 2;
+      
+      // The ownership epoch.
+      int64 ownership_epoch = 3;
+    }
+  }
+}
+
+message PingRequest {
+  // [required] The unique identifier of the consumer.
+  string consumer_id = 1;
+
+  // [required] The consumer group of the consumer.
+  string consumer_group = 2;
+}
+message PingResponse {
+  // The collection containing current owner epoch for all partitions
+  // of the consumer group.
+  repeated CurrentPartitionOwner current_partition_owners = 1;
+}
+
+message LeaveRequest {
+  // [required] The unique identifier of the consumer.
+  string consumer_id = 1;
+
+  // [required] The consumer group of the consumer.
+  string consumer_group = 2;
+}
+message LeaveResponse {}
