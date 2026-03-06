@@ -4,5 +4,10 @@
     <PackageReference Include="FluentMigrator.Runner" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Npgsql" />
+    <PackageReference Include="Npgsql.DependencyInjection" />
+    <PackageReference Include="Dapper" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Zamza.Server.Models\Zamza.Server.Models.csproj" />
   </ItemGroup>
 </Project>
