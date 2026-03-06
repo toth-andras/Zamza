@@ -9,7 +9,6 @@ public sealed class _20260306133100_RetryQueue_Initialize : SqlMigrationBase
     """
         create table if not exists zamza.retry_queue
         (
-            -- Zamza message data
             consumer_group text not null,
             topic text not null,
             partition integer not null,
@@ -23,7 +22,6 @@ public sealed class _20260306133100_RetryQueue_Initialize : SqlMigrationBase
             processing_period_ms bigint,
             retry_reason jsonb,
             
-            -- Technical fields. Zamza does not return these to clients
             retries_count integer not null,
             next_retry_after timestamp with time zone not null,
             processing_deadline timestamp with time zone,
