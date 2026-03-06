@@ -183,6 +183,11 @@ message CommitRequest {
 
     // [required] The message.
     ZamzaMessage message = 2;
+    
+    // [required] The next reprocessing attempt will be executed 
+    // not earlier than after this time period. If not set by client,
+    // defaults to min_retries_gap_ms.
+    int64 next_retry_after_ms = 3;
   }
   message PoisonedMessage {
     // [required] The consumer's ownership 
