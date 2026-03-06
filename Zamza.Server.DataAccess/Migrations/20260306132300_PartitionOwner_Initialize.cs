@@ -14,7 +14,7 @@ public sealed class _20260306132300_PartitionOwner_Initialize : SqlMigrationBase
             partition integer not null,
             epoch bigint not null,
             consumer_id text,
-            timestamp timestamp not null
+            timestamp_utc timestamp with time zone not null
         );
     """;
     protected override string SqlDown => 
