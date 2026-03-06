@@ -1,4 +1,4 @@
-namespace Zamza.Server.Models.Messages;
+namespace Zamza.Server.Models.ConsumerApi;
 
 public sealed class ConsumerApiMessage
 {
