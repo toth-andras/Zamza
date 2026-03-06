@@ -38,7 +38,7 @@ message CurrentPartitionOwner {
   int32 partition = 2;
 
   // [required] Epoch of the current owner of the partition.
-  int64 owner_epoch = 3;
+  int64 ownership_epoch = 3;
 }
 
 // Represents a Kafka message stored in Zamza.
@@ -114,7 +114,7 @@ message FetchRequest {
 
     // [required] The consumer's ownership 
     // epoch over the partition. 
-    int64 owner_epoch = 4;
+    int64 ownership_epoch = 4;
   }
 }
 message FetchResponse{
@@ -171,12 +171,12 @@ message CommitRequest {
 
     // [required] The consumer's ownership 
     // epoch over the partition. 
-    int64 owner_epoch = 4;
+    int64 ownership_epoch = 4;
   }
   message FailedMessage {
     // [required] The consumer's ownership 
     // epoch over the partition. 
-    int64 owner_epoch = 1;
+    int64 ownership_epoch = 1;
 
     // [required] The message.
     ZamzaMessage message = 2;
@@ -189,7 +189,7 @@ message CommitRequest {
   message PoisonedMessage {
     // [required] The consumer's ownership 
     // epoch over the partition. 
-    int64 owner_epoch = 1;
+    int64 ownership_epoch = 1;
 
     // [required] The message.
     ZamzaMessage message = 2;
@@ -249,7 +249,7 @@ message ClaimPartitionOwnershipRequest {
     
     // [required] The epoch of the previous 
     // owner of the partition.
-    int64 known_owner_epoch = 3;
+    int64 known_ownership_epoch = 3;
   }
 }
 message ClaimPartitionOwnershipResponse {
