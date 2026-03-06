@@ -61,10 +61,10 @@ message ZamzaMessage {
   map<string, bytes> headers = 5;
 
   // The key of the original Kafka message.
-  bytes key = 6;
+  google.protobuf.BytesValue key = 6;
 
   // The value of the original Kafka message.
-  bytes value = 7;
+  google.protobuf.BytesValue value = 7;
 
   // [required] The timestamp of the original Kafka message.
   google.protobuf.Timestamp timestamp = 8;

@@ -13,11 +13,10 @@ public class _20260306160600_Dlq_Initialize : SqlMigrationBase
             topic text not null,
             partition integer not null,
             offset_value bigint not null,
-            headers jsonb,
+            headers jsonb not null,
             key bytea,
             value bytea,
             timestamp timestamp with time zone not null,
-            
             retries_count int not null,
             became_poisoned_at_utc timestamp with time zone not null,
             version smallint not null

@@ -10,7 +10,7 @@ public sealed class ConsumerApiMessage
     
     public required long Offset { get; set; }
     
-    public Dictionary<string, byte[]>? Headers { get; set; }
+    public required Dictionary<string, byte[]> Headers { get; set; }
     
     public byte[]? Key { get; set; }
     
