@@ -83,11 +83,8 @@ message ZamzaMessage {
   // the message is considered to be poisoned.
   google.protobuf.Int64Value processing_period_ms = 11;
 
-  // The number of retries that have been executed on the message.
+  // [required] The number of retries that have been executed on the message.
   int32 retries_count = 12;
-
-  // The reason for saving the message in Zamza, provided by client.
-  google.protobuf.StringValue retry_reason = 13;
 }
 
 message FetchRequest {

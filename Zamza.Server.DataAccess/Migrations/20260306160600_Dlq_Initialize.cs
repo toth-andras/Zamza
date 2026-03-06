@@ -16,8 +16,7 @@ public class _20260306160600_Dlq_Initialize : SqlMigrationBase
             headers jsonb,
             key bytea,
             value bytea,
-            timestamp timestamp with time zone not null, 
-            is_poisoned_because jsonb,
+            timestamp timestamp with time zone not null,
             
             retries_count int not null,
             became_poisoned_at_utc timestamp with time zone not null,

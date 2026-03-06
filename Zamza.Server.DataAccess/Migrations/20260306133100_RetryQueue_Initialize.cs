@@ -20,7 +20,6 @@ public sealed class _20260306133100_RetryQueue_Initialize : SqlMigrationBase
             max_retries integer not null,
             min_retries_gap_ms bigint not null,
             processing_period_ms bigint,
-            retry_reason jsonb,
             
             retries_count integer not null,
             next_retry_after timestamp with time zone not null,
