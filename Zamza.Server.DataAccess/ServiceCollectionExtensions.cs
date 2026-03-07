@@ -1,6 +1,7 @@
 using FluentMigrator.Runner;
 using Microsoft.Extensions.DependencyInjection;
 using Zamza.Server.DataAccess.Common.Connections;
+using Zamza.Server.DataAccess.Common.DapperMapping;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository;
 using Zamza.Server.DataAccess.Repositories.RetryQueueRepository;
 
@@ -10,8 +11,12 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddDataAccess(this IServiceCollection services)
     {
-        services.AddFluentMigrator();
-        services.AddConnectionFactory();
+        var connectionString = GetConnectionString();
+        
+        services.AddFluentMigrator(connectionString);
+        services.AddConnectionFactory(connectionString);
+        
+        DapperMappingExtensions.Configure();
 
         services.AddTransient<IPartitionOwnershipRepository, PartitionOwnershipRepository>();
         services.AddTransient<IRetryQueueRepository, RetryQueueRepository>();
@@ -19,29 +24,31 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    private static IServiceCollection AddFluentMigrator(this IServiceCollection services)
+    private static IServiceCollection AddFluentMigrator(this IServiceCollection services, string connectionString)
     {
         services
             .AddFluentMigratorCore()
             .ConfigureRunner(runnerBuilder => runnerBuilder
                 .AddPostgres()
-                .WithGlobalConnectionString("Server=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres")
+                .WithGlobalConnectionString(connectionString)
                 .ScanIn(typeof(ServiceCollectionExtensions).Assembly).For.Migrations())
             .BuildServiceProvider(false);
         
         return services;
     }
 
-    private static IServiceCollection AddConnectionFactory(this IServiceCollection services)
+    private static IServiceCollection AddConnectionFactory(this IServiceCollection services, string connectionString)
     {
-        const string dbConnectionStringEnvironmentVariableName = "DB_CONNECTION_STRING";
-
-        var connectionString = Environment.GetEnvironmentVariable(dbConnectionStringEnvironmentVariableName)
-            ?? throw new ApplicationException($"{dbConnectionStringEnvironmentVariableName} must be set");
-        
         services.AddNpgsqlDataSource(connectionString);
         services.AddSingleton<IConnectionFactory, ConnectionFactory>();
 
         return services;
+    }
+
+    private static string GetConnectionString()
+    {
+        const string dbConnectionStringEnvironmentVariableName = "DB_CONNECTION_STRING";
+        return Environment.GetEnvironmentVariable(dbConnectionStringEnvironmentVariableName)
+                               ?? throw new ApplicationException($"{dbConnectionStringEnvironmentVariableName} must be set");
     }
 }

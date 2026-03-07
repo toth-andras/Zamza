@@ -4,8 +4,10 @@ namespace Zamza.Server.ConsumerApi;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddConsumerApi(this IServiceCollection services)
+    public static IServiceCollection AddConsumerApiLayer(this IServiceCollection services)
     {
+        services.AddGrpc();
+        
         return services;
     }
 }

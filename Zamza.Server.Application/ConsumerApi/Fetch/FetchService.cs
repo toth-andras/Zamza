@@ -42,13 +42,14 @@ internal sealed class FetchService : IFetchService
             messages);
     }
 
-    private bool IsOwnerForAllFetchedPartitions(
+    private static bool IsOwnerForAllFetchedPartitions(
         IReadOnlyCollection<PartitionFetch> partitions,
         IReadOnlyDictionary<(string Topic, int Partition), PartitionOwnership> partitionOwners)
     {
         foreach (var partitionFetch in partitions)
         {
-            if (partitionFetch.OwnershipEpoch != partitionOwners[(partitionFetch.Topic, partitionFetch.Partition)].Epoch)
+            if (partitionOwners.TryGetValue((partitionFetch.Topic, partitionFetch.Partition), out var partitionOwner) 
+                && partitionFetch.OwnershipEpoch != partitionOwner.Epoch)
             {
                 return false;
             }

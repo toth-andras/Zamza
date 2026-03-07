@@ -55,7 +55,7 @@ internal static class GetMessagesForFetchSqlCommand
                 ConsumerGroup = consumerGroup,
                 Topics = topics,
                 Partitions = partitions,
-                KafkaOffset = kafkaOffsets,
+                KafkaOffsets = kafkaOffsets,
                 Limit = limit
             },
             commandTimeout: CommandTimeoutSeconds,

@@ -10,11 +10,11 @@ internal static class GetPartitionOwnershipsForConsumerGroupSqlCommand
     private const string Sql =
     $"""
         select
-           topic        as {nameof(PartitionOwnership.Topic)},
-           partition    as {nameof(PartitionOwnership.Partition)},
-           epoch        as {nameof(PartitionOwnership.Epoch)},
-           consumer_id  as {nameof(PartitionOwnership.ConsumerId)},
-           timestamp    as {nameof(PartitionOwnership.Timestamp)}
+           topic            as {nameof(PartitionOwnership.Topic)},
+           partition        as {nameof(PartitionOwnership.Partition)},
+           epoch            as {nameof(PartitionOwnership.Epoch)},
+           consumer_id      as {nameof(PartitionOwnership.ConsumerId)},
+           timestamp_utc    as {nameof(PartitionOwnership.Timestamp)}
         from zamza.partition_ownership
         where consumer_group = @ConsumerGroup;
     """;
