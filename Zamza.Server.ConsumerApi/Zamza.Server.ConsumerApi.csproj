@@ -13,4 +13,8 @@
   <ItemGroup>
     <Protobuf Include="protos\*\*.proto" GrpcServices="Server" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Zamza.Server.Application\Zamza.Server.Application.csproj" />
+  </ItemGroup>
 </Project>
