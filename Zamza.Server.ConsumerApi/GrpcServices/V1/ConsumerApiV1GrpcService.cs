@@ -1,6 +1,7 @@
 using Grpc.Core;
 using Zamza.ConsumerApi.V1;
 using Zamza.Server.Application.ConsumerApi.Fetch;
+using Zamza.Server.Application.ConsumerApi.Ping;
 using Zamza.Server.ConsumerApi.GrpcServices.V1.Mapping;
 using Zamza.Server.ConsumerApi.Utils;
 
@@ -9,10 +10,14 @@ namespace Zamza.Server.ConsumerApi.GrpcServices.V1;
 internal sealed class ConsumerApiV1GrpcService : ConsumerApiV1.ConsumerApiV1Base
 {
     private readonly IFetchService _fetchService;
+    private readonly IPingService _pingService;
 
-    public ConsumerApiV1GrpcService(IFetchService fetchService)
+    public ConsumerApiV1GrpcService(
+        IFetchService fetchService,
+        IPingService pingService)
     {
         _fetchService = fetchService;
+        _pingService = pingService;
     }
 
     public override async Task<FetchResponse> Fetch(
@@ -23,6 +28,15 @@ internal sealed class ConsumerApiV1GrpcService : ConsumerApiV1.ConsumerApiV1Base
         
         var result = await _fetchService.Fetch(
             request.ToModel(bearerToken),
+            context.CancellationToken);
+
+        return result.ToGrpc();
+    }
+
+    public override async Task<PingResponse> Ping(PingRequest request, ServerCallContext context)
+    {
+        var result = await _pingService.Ping(
+            request.ToModel(),
             context.CancellationToken);
 
         return result.ToGrpc();

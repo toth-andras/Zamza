@@ -8,7 +8,7 @@ using GrpcCurrentPartitionOwner = Zamza.ConsumerApi.V1.CurrentPartitionOwner;
 
 namespace Zamza.Server.ConsumerApi.GrpcServices.V1.Mapping;
 
-internal static class FetchRequestMappingExtensions
+internal static class FetchMappingExtensions
 {
     public static ModelFetchRequest ToModel(this GrpcFetchRequest request, string? bearerToken)
     {
