@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="OneOf" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\Zamza.Server.DataAccess\Zamza.Server.DataAccess.csproj" />
+    <ProjectReference Include="..\Zamza.Server.Models\Zamza.Server.Models.csproj" />
+  </ItemGroup>
+</Project>

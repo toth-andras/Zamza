@@ -18,6 +18,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Migration test", "Migration
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zamza.Server.Models", "Zamza.Server.Models\Zamza.Server.Models.csproj", "{63A92F96-B146-441C-BB23-CAFBF1C02C4A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zamza.Server.Application", "Zamza.Server.Application\Zamza.Server.Application.csproj", "{18E4A8C4-1ECA-4000-AADE-DC4265242DC7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,6 +31,7 @@ Global
 		{D3535847-53BD-4466-8C70-D3FB0771A080} = {AE72329E-5F64-4251-8D45-E422C43FC33F}
 		{C1B84978-5B7D-4DED-89E5-8F8FD3702349} = {AE72329E-5F64-4251-8D45-E422C43FC33F}
 		{63A92F96-B146-441C-BB23-CAFBF1C02C4A} = {AE72329E-5F64-4251-8D45-E422C43FC33F}
+		{18E4A8C4-1ECA-4000-AADE-DC4265242DC7} = {AE72329E-5F64-4251-8D45-E422C43FC33F}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{061A58EF-F089-4538-9252-7A3AD841E197}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -47,5 +50,9 @@ Global
 		{63A92F96-B146-441C-BB23-CAFBF1C02C4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{63A92F96-B146-441C-BB23-CAFBF1C02C4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{63A92F96-B146-441C-BB23-CAFBF1C02C4A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{18E4A8C4-1ECA-4000-AADE-DC4265242DC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18E4A8C4-1ECA-4000-AADE-DC4265242DC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18E4A8C4-1ECA-4000-AADE-DC4265242DC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18E4A8C4-1ECA-4000-AADE-DC4265242DC7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
