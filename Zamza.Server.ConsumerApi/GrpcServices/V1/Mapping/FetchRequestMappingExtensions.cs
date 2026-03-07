@@ -10,9 +10,10 @@ namespace Zamza.Server.ConsumerApi.GrpcServices.V1.Mapping;
 
 internal static class FetchRequestMappingExtensions
 {
-    public static ModelFetchRequest ToModel(this GrpcFetchRequest request)
+    public static ModelFetchRequest ToModel(this GrpcFetchRequest request, string? bearerToken)
     {
         return new ModelFetchRequest(
+            bearerToken,
             request.ConsumerGroup,
             request.Partitions.Select(fetch => fetch.ToModel()).ToList(),
             request.Limit);

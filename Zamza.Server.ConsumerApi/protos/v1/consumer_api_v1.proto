@@ -8,17 +8,17 @@ package Zamza.ConsumerApi.V1;
 service ConsumerApiV1 {
   // Gets messages for reprocessing attempt.
   // Required gRPC metadata headers:
-  //  - authorization: Bearer <token>
+  //  - Authorization: Bearer <token>
   rpc Fetch(FetchRequest) returns (FetchResponse);
 
   // Saves the results of message processing.
   // Required gRPC metadata headers:
-  //  - authorization: Bearer <token>
+  //  - Authorization: Bearer <token>
   rpc Commit(CommitRequest) returns (CommitResponse);
 
   // Tries to grant the consumer ownership over given partitions.
   // Required gRPC metadata headers:
-  //  - authorization: Bearer <token>
+  //  - Authorization: Bearer <token>
   rpc ClaimPartitionOwnership(ClaimPartitionOwnershipRequest) returns (ClaimPartitionOwnershipResponse);
 
   // Ping request for Zamza availability check.

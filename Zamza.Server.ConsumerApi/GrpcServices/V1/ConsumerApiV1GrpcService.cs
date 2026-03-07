@@ -2,6 +2,7 @@ using Grpc.Core;
 using Zamza.ConsumerApi.V1;
 using Zamza.Server.Application.ConsumerApi.Fetch;
 using Zamza.Server.ConsumerApi.GrpcServices.V1.Mapping;
+using Zamza.Server.ConsumerApi.Utils;
 
 namespace Zamza.Server.ConsumerApi.GrpcServices.V1;
 
@@ -18,8 +19,10 @@ internal sealed class ConsumerApiV1GrpcService : ConsumerApiV1.ConsumerApiV1Base
         FetchRequest request, 
         ServerCallContext context)
     {
+        var bearerToken = BearerTokenHelper.GetBearerToken(context.RequestHeaders);
+        
         var result = await _fetchService.Fetch(
-            request.ToModel(),
+            request.ToModel(bearerToken),
             context.CancellationToken);
 
         return result.ToGrpc();
