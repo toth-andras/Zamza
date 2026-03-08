@@ -1,7 +1,6 @@
 using Zamza.Server.Application.ConsumerApi.Fetch.Models;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository;
 using Zamza.Server.DataAccess.Repositories.RetryQueueRepository;
-using Zamza.Server.Models.ConsumerApi;
 
 namespace Zamza.Server.Application.ConsumerApi.Fetch;
 
@@ -22,13 +21,15 @@ internal sealed class FetchService : IFetchService
         FetchRequest request,
         CancellationToken cancellationToken)
     {
-        var partitionOwners = await _partitionOwnershipRepository.Get(
-            request.ConsumerGroup,
-            cancellationToken);
+        var checkPartitionOwnershipRelevanceResult = await _partitionOwnershipRepository
+            .CheckPartitionsOwnershipsRelevance(
+                request.ConsumerGroup,
+                request.PartitionFetches,
+                cancellationToken);
 
-        if (IsOwnerForAllFetchedPartitions(request.PartitionFetches, partitionOwners) is false)
+        if (checkPartitionOwnershipRelevanceResult.IsOwnershipRelevant is false)
         {
-            return FetchResponse.AsPartitionOwnershipObsolete(partitionOwners.Values);
+            return FetchResponse.AsPartitionOwnershipObsolete(checkPartitionOwnershipRelevanceResult.CurrentOwnerships);
         }
 
         var messages = await _retryQueueRepository.GetForFetch(
@@ -38,23 +39,7 @@ internal sealed class FetchService : IFetchService
             cancellationToken);
         
         return FetchResponse.AsOk(
-            partitionOwners.Values,
+            checkPartitionOwnershipRelevanceResult.CurrentOwnerships,
             messages);
-    }
-
-    private static bool IsOwnerForAllFetchedPartitions(
-        IReadOnlyCollection<PartitionFetch> partitions,
-        IReadOnlyDictionary<(string Topic, int Partition), PartitionOwnership> partitionOwners)
-    {
-        foreach (var partitionFetch in partitions)
-        {
-            if (partitionOwners.TryGetValue((partitionFetch.Topic, partitionFetch.Partition), out var partitionOwner) 
-                && partitionFetch.OwnershipEpoch != partitionOwner.Epoch)
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 }

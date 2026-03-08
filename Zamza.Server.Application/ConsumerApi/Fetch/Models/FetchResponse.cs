@@ -4,10 +4,10 @@ using Zamza.Server.Models.ConsumerApi;
 namespace Zamza.Server.Application.ConsumerApi.Fetch.Models;
 
 public sealed record FetchResponse(
-    IEnumerable<PartitionOwnership> CurrentOwners,
+    IReadOnlyCollection<PartitionOwnership> CurrentOwners,
     OneOf<FetchResponse.PartitionOwnershipObsolete, FetchResponse.PermissionDenied, FetchResponse.Ok> Result)
 {
-    public static FetchResponse AsPartitionOwnershipObsolete(IEnumerable<PartitionOwnership> currentOwners)
+    public static FetchResponse AsPartitionOwnershipObsolete(IReadOnlyCollection<PartitionOwnership> currentOwners)
     {
         return new FetchResponse(
             currentOwners,
@@ -15,7 +15,7 @@ public sealed record FetchResponse(
     }
 
     public static FetchResponse AsPermissionDenied(
-        IEnumerable<PartitionOwnership> currentOwners,
+        IReadOnlyCollection<PartitionOwnership> currentOwners,
         IReadOnlyCollection<string> prohibitedTopics)
     {
         return new FetchResponse(
@@ -24,7 +24,7 @@ public sealed record FetchResponse(
     }
 
     public static FetchResponse AsOk(
-        IEnumerable<PartitionOwnership> currentOwners,
+        IReadOnlyCollection<PartitionOwnership> currentOwners,
         IReadOnlyCollection<ConsumerApiMessage> messages)
     {
         return new FetchResponse(
