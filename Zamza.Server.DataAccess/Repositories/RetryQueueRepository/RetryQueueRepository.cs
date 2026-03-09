@@ -1,5 +1,5 @@
 using Dapper;
-using Zamza.Server.DataAccess.Common.Connections;
+using Zamza.Server.DataAccess.Common.ConnectionsManagement;
 using Zamza.Server.DataAccess.Repositories.RetryQueueRepository.SqlCommands;
 using Zamza.Server.Models.ConsumerApi;
 
@@ -7,11 +7,11 @@ namespace Zamza.Server.DataAccess.Repositories.RetryQueueRepository;
 
 internal sealed class RetryQueueRepository : IRetryQueueRepository
 {
-    private readonly IConnectionFactory _connectionFactory;
+    private readonly IDbConnectionsManager _dbConnectionsManager;
 
-    public RetryQueueRepository(IConnectionFactory connectionFactory)
+    public RetryQueueRepository(IDbConnectionsManager dbConnectionsManager)
     {
-        _connectionFactory = connectionFactory;
+        _dbConnectionsManager = dbConnectionsManager;
     }
     
     public async Task<List<ConsumerApiMessage>> GetForFetch(
@@ -20,7 +20,7 @@ internal sealed class RetryQueueRepository : IRetryQueueRepository
         int limit, 
         CancellationToken cancellationToken)
     {
-        await using var connection = await _connectionFactory.CreateConnection(cancellationToken);
+        await using var connection = await _dbConnectionsManager.CreateConnection(cancellationToken);
         
         var topics = new string[fetchedPartitions.Count];
         var partitions = new int[fetchedPartitions.Count];

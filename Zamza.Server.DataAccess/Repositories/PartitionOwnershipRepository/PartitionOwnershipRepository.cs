@@ -1,5 +1,6 @@
 using Dapper;
-using Zamza.Server.DataAccess.Common.Connections;
+using Zamza.Server.DataAccess.Common.ConnectionsManagement;
+using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.Models;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.SqlCommands;
 using Zamza.Server.Models.ConsumerApi;
@@ -8,18 +9,18 @@ namespace Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository;
 
 internal sealed class PartitionOwnershipRepository : IPartitionOwnershipRepository
 {
-    private readonly IConnectionFactory  _connectionFactory;
+    private readonly IDbConnectionsManager  _dbConnectionsManager;
 
-    public PartitionOwnershipRepository(IConnectionFactory connectionFactory)
+    public PartitionOwnershipRepository(IDbConnectionsManager dbConnectionsManager)
     {
-        _connectionFactory = connectionFactory;
+        _dbConnectionsManager = dbConnectionsManager;
     }
 
     public async Task<IReadOnlyDictionary<(string Topic, int Partition), PartitionOwnership>> Get(
         string consumerGroup, 
         CancellationToken cancellation)
     {
-        await using var connection = await _connectionFactory.CreateConnection(cancellation);
+        await using var connection = await _dbConnectionsManager.CreateConnection(cancellation);
         
         var sqlCommand = GetPartitionOwnershipsForConsumerGroupSqlCommand.BuildCommandDefinition(
             consumerGroup,
@@ -35,7 +36,7 @@ internal sealed class PartitionOwnershipRepository : IPartitionOwnershipReposito
         IReadOnlyCollection<PartitionFetch> fetchesToCheck,
         CancellationToken cancellation)
     {
-        await using var connection = await _connectionFactory.CreateConnection(cancellation);
+        await using var connection = await _dbConnectionsManager.CreateConnection(cancellation);
         
         var sqlCommand = GetPartitionOwnershipsForConsumerGroupSqlCommand.BuildCommandDefinition(
             consumerGroup,
@@ -63,5 +64,34 @@ internal sealed class PartitionOwnershipRepository : IPartitionOwnershipReposito
         return new CheckPartitionsOwnershipsRelevanceResponse(
             IsOwnershipRelevant: isOwnerForAllFetchedPartition,
             partitionOwnerships);
+    }
+
+    public async Task LockPartitions(
+        IDbTransactionFrame transaction,
+        string consumerGroup,
+        IReadOnlyList<PartitionLockInfo> requestedPartitions,
+        CancellationToken cancellationToken)
+    {
+        if (requestedPartitions.Count == 0)
+        {
+            return;
+        }
+        
+        var topics = new string[requestedPartitions.Count];
+        var partitions = new int[requestedPartitions.Count];
+        for (var partitionIndex = 0; partitionIndex < requestedPartitions.Count; partitionIndex++)
+        {
+            topics[partitionIndex] = requestedPartitions[partitionIndex].Topic;
+            partitions[partitionIndex] = requestedPartitions[partitionIndex].Partition;
+        }
+
+        var command = LockPartitionsSqlCommand.BuildCommandDefinition(
+            transaction,
+            consumerGroup,
+            topics,
+            partitions,
+            cancellationToken);
+
+        await transaction.Connection.ExecuteAsync(command);
     }
 }

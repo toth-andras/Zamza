@@ -1,6 +1,6 @@
 using FluentMigrator.Runner;
 using Microsoft.Extensions.DependencyInjection;
-using Zamza.Server.DataAccess.Common.Connections;
+using Zamza.Server.DataAccess.Common.ConnectionsManagement;
 using Zamza.Server.DataAccess.Common.DapperMapping;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository;
 using Zamza.Server.DataAccess.Repositories.RetryQueueRepository;
@@ -40,7 +40,7 @@ public static class ServiceCollectionExtensions
     private static IServiceCollection AddConnectionFactory(this IServiceCollection services, string connectionString)
     {
         services.AddNpgsqlDataSource(connectionString);
-        services.AddSingleton<IConnectionFactory, ConnectionFactory>();
+        services.AddSingleton<IDbConnectionsManager, DbConnectionsManager>();
 
         return services;
     }
