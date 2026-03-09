@@ -1,4 +1,5 @@
 using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
+using Zamza.Server.DataAccess.Repositories.Models;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.Models;
 using Zamza.Server.Models.ConsumerApi;
 
@@ -18,6 +19,6 @@ public interface IPartitionOwnershipRepository
     Task LockPartitions(
         IDbTransactionFrame transaction,
         string consumerGroup,
-        IReadOnlyList<PartitionLockInfo> requestedPartitions,
+        IReadOnlyList<TopicPartition> requestedPartitions,
         CancellationToken cancellationToken);
 }

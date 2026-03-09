@@ -1,6 +1,7 @@
 using Dapper;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
+using Zamza.Server.DataAccess.Repositories.Models;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.Models;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.SqlCommands;
 using Zamza.Server.Models.ConsumerApi;
@@ -69,7 +70,7 @@ internal sealed class PartitionOwnershipRepository : IPartitionOwnershipReposito
     public async Task LockPartitions(
         IDbTransactionFrame transaction,
         string consumerGroup,
-        IReadOnlyList<PartitionLockInfo> requestedPartitions,
+        IReadOnlyList<TopicPartition> requestedPartitions,
         CancellationToken cancellationToken)
     {
         if (requestedPartitions.Count == 0)
