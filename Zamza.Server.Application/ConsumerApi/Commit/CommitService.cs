@@ -44,9 +44,17 @@ internal sealed class CommitService : ICommitService
             request.ConsumerPartitionOwnerships,
             cancellationToken);
 
-        var messagesFromUnownedPartitions = request.FailedMessages
-            .Where(message => ownedPartitions.Contains((message.Message.Topic, message.Message.Partition)) is false)
-            .Select(message => new TopicPartitionOffset(message.Message.Topic, message.Message.Partition, message.Message.Offset))
+        var messagesFromUnownedPartitions = request.ProcessedMessages.TopicValue
+            .Select((_, index) => new TopicPartitionOffset(
+                request.ProcessedMessages.TopicValue[index],
+                request.ProcessedMessages.PartitionValue[index],
+                request.ProcessedMessages.OffsetValue[index]))
+            .Where(tpo => ownedPartitions.Contains((tpo.Topic, tpo.Partition)) is false)
+            .Concat(
+                request.FailedMessages
+                    .Where(message => ownedPartitions.Contains((message.Message.Topic, message.Message.Partition)) is false)
+                    .Select(message => new TopicPartitionOffset(message.Message.Topic, message.Message.Partition, message.Message.Offset))
+            )
             .Concat(
                 request.PoisonedMessages
                     .Where(message => ownedPartitions.Contains((message.Topic, message.Partition)) is false)
