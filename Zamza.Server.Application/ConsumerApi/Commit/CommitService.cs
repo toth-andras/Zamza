@@ -62,6 +62,8 @@ internal sealed class CommitService : ICommitService
             )
             .ToList();
 
+        request = RemoveUnownedPartitionsMessages(request, ownedPartitions);
+
         var (toRemoveFromRetryQueue, toRemoveFromDql) = GetMessagesToRemove(request);
 
         await _retryQueueRepository.ClearMessages(
@@ -112,6 +114,42 @@ internal sealed class CommitService : ICommitService
             .ToHashSet();
         
         return (ownedPartitions, ownershipsFromDb.Values.ToList());
+    }
+
+    private static CommitRequest RemoveUnownedPartitionsMessages(
+        CommitRequest initialRequest,
+        IReadOnlySet<(string Topic, int Partition)> ownedPartitions)
+    {
+        var topics = new List<string>(initialRequest.ProcessedMessages.MessageCount);
+        var partitions = new List<int>(initialRequest.ProcessedMessages.MessageCount);
+        var offsets = new List<long>(initialRequest.ProcessedMessages.MessageCount);
+        for (int i = 0; i < initialRequest.ProcessedMessages.MessageCount; i++)
+        {
+            if (ownedPartitions.Contains((initialRequest.ProcessedMessages.TopicValue[i],
+                    initialRequest.ProcessedMessages.PartitionValue[i])))
+            {
+                topics.Add(initialRequest.ProcessedMessages.TopicValue[i]);
+                partitions.Add(initialRequest.ProcessedMessages.PartitionValue[i]);
+                offsets.Add(initialRequest.ProcessedMessages.OffsetValue[i]);
+            }
+        }
+        
+        return new CommitRequest(
+            initialRequest.ConsumerId,
+            initialRequest.ConsumerGroup,
+            new MessageKeysSet(
+                initialRequest.ConsumerGroup,
+                topics.ToArray(),
+                partitions.ToArray(),
+                offsets.ToArray()),
+            initialRequest.FailedMessages
+                .Where(message => ownedPartitions.Contains((message.Message.Topic, message.Message.Partition)))
+                .ToList(),
+            initialRequest.PoisonedMessages
+                .Where(message => ownedPartitions.Contains((message.Topic, message.Partition)))
+                .ToList(),
+            initialRequest.ConsumerPartitionOwnerships
+        );
     }
 
     private static (MessageKeysSet RemoveFromRetryQueue, MessageKeysSet RemoveFromDlq) GetMessagesToRemove(
