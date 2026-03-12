@@ -14,13 +14,14 @@ public interface IPartitionOwnershipRepository
         string consumerGroup,
         IReadOnlyCollection<PartitionFetch> fetchesToCheck,
         CancellationToken cancellation);
-
-    Task<CheckPartitionsOwnershipsRelevanceResponse> CheckPartitionsOwnershipsRelevance(
-        ConsumerPartitionOwnershipsSet ownershipsToCheck,
-        CancellationToken cancellationToken);
     
     Task LockPartitions(
         IDbTransactionFrame transaction,
         ConsumerPartitionOwnershipsSet partitionOwnerships,
         CancellationToken cancellationToken);
+
+    Task StopConsumerLeaderships(
+        string consumerId,
+        string consumerGroup,
+        CancellationToken cancellation);
 }

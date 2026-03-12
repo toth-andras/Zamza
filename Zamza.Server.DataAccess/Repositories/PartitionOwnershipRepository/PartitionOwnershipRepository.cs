@@ -4,6 +4,7 @@ using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
 using Zamza.Server.DataAccess.Repositories.Models;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.Models;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.SqlCommands;
+using Zamza.Server.DataAccess.Utils.DateTimeProvider;
 using Zamza.Server.Models.ConsumerApi;
 
 namespace Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository;
@@ -11,10 +12,14 @@ namespace Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository;
 internal sealed class PartitionOwnershipRepository : IPartitionOwnershipRepository
 {
     private readonly IDbConnectionsManager  _dbConnectionsManager;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
-    public PartitionOwnershipRepository(IDbConnectionsManager dbConnectionsManager)
+    public PartitionOwnershipRepository(
+        IDbConnectionsManager dbConnectionsManager,
+        IDateTimeProvider dateTimeProvider)
     {
         _dbConnectionsManager = dbConnectionsManager;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     public async Task<IReadOnlyDictionary<(string Topic, int Partition), PartitionOwnership>> Get(
@@ -154,5 +159,20 @@ internal sealed class PartitionOwnershipRepository : IPartitionOwnershipReposito
             cancellationToken);
         
         await transaction.Connection.ExecuteAsync(command);
+    }
+
+    public async Task StopConsumerLeaderships(
+        string consumerId,
+        string consumerGroup,
+        CancellationToken cancellation)
+    {
+        var command = StopConsumerLeadershipSqlCommand.BuildCommandDefinition(
+            consumerId,
+            consumerGroup,
+            _dateTimeProvider.UtcNow,
+            cancellation);
+        
+        await using var connection = await _dbConnectionsManager.CreateConnection(cancellation);
+        await connection.ExecuteAsync(command);
     }
 }
