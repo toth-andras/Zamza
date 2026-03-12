@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Zamza.Server.Application.ConsumerApi.Commit;
 using Zamza.Server.Application.ConsumerApi.Fetch;
 using Zamza.Server.Application.ConsumerApi.Ping;
 
@@ -17,6 +18,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddTransient<IFetchService, FetchService>();
         services.AddTransient<IPingService, PingService>();
+        services.AddTransient<ICommitService, CommitService>();
         
         return services;
     }

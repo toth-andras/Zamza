@@ -41,6 +41,12 @@ message CurrentPartitionOwner {
   int64 ownership_epoch = 3;
 }
 
+message ConsumerPartitionOwnershipEpoch {
+  string topic = 1;
+  int32 partition = 2;
+  int64 ownership_epoch = 3;
+}
+
 // Represents a Kafka message stored in Zamza.
 message ZamzaMessage {
   // [required] The name of the consumer group whose
@@ -148,16 +154,18 @@ message CommitRequest {
 
   // [required] The consumer group of the consumer.
   string consumer_group = 2;
+  
+  repeated ConsumerPartitionOwnershipEpoch owned_partitions = 4;
 
   // The messages that should be removed from Zamza.
-  repeated ProcessedMessage processed_messages = 3;
+  repeated ProcessedMessage processed_messages = 5;
 
   // The messages that should be reprocessed in the future.
-  repeated FailedMessage failed_messages = 4;
+  repeated FailedMessage failed_messages = 6;
 
   // The messages that should be stored in Zamza but are
   // no longer valid for processing retries.
-  repeated PoisonedMessage poisoned_messages = 5;
+  repeated ZamzaMessage poisoned_messages = 7;
 
   message ProcessedMessage {
     // [required] The topic of the original Kafka message.
@@ -168,31 +176,15 @@ message CommitRequest {
 
     // [required] The offset of the original Kafka message.
     int64 offset = 3;
-
-    // [required] The consumer's ownership 
-    // epoch over the partition. 
-    int64 ownership_epoch = 4;
   }
   message FailedMessage {
-    // [required] The consumer's ownership 
-    // epoch over the partition. 
-    int64 ownership_epoch = 1;
-
     // [required] The message.
-    ZamzaMessage message = 2;
+    ZamzaMessage message = 1;
     
     // [required] The next reprocessing attempt will be executed 
     // not earlier than after this time period. If not set by client,
     // defaults to min_retries_gap_ms.
-    int64 next_retry_after_ms = 3;
-  }
-  message PoisonedMessage {
-    // [required] The consumer's ownership 
-    // epoch over the partition. 
-    int64 ownership_epoch = 1;
-
-    // [required] The message.
-    ZamzaMessage message = 2;
+    int64 next_retry_after_ms = 2;
   }
 }
 message CommitResponse {

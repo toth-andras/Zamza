@@ -35,4 +35,25 @@ internal static class ConsumerApiMessageMappingExtensions
             RetriesCount = message.RetriesCount
         };
     }
+
+    public static ModelConsumerApiMessage ToModel(this GrpcConsumerApiMessage message)
+    {
+        return new ModelConsumerApiMessage
+        {
+            ConsumerGroup = message.ConsumerGroup,
+            Topic = message.Topic,
+            Partition = message.Partition,
+            Offset = message.Offset,
+            Headers = message.Headers.ToDictionary(
+                x => x.Key,
+                x => x.Value.ToByteArray()),
+            Key = message.Key.ToByteArray(),
+            Value = message.Value.ToByteArray(),
+            Timestamp = message.Timestamp.ToDateTimeOffset(),
+            MaxRetries = message.MaxRetries,
+            MinRetriesGapMs = message.MinRetriesGapMs,
+            ProcessingPeriodMs = message.ProcessingPeriodMs,
+            RetriesCount = message.RetriesCount
+        };
+    }
 }

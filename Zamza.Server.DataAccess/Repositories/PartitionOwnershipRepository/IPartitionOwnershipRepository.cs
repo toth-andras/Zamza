@@ -1,5 +1,4 @@
 using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
-using Zamza.Server.DataAccess.Repositories.Models;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.Models;
 using Zamza.Server.Models.ConsumerApi;
 
@@ -16,9 +15,12 @@ public interface IPartitionOwnershipRepository
         IReadOnlyCollection<PartitionFetch> fetchesToCheck,
         CancellationToken cancellation);
 
+    Task<CheckPartitionsOwnershipsRelevanceResponse> CheckPartitionsOwnershipsRelevance(
+        ConsumerPartitionOwnershipsSet ownershipsToCheck,
+        CancellationToken cancellationToken);
+    
     Task LockPartitions(
         IDbTransactionFrame transaction,
-        string consumerGroup,
-        IReadOnlyList<TopicPartition> requestedPartitions,
+        ConsumerPartitionOwnershipsSet partitionOwnerships,
         CancellationToken cancellationToken);
 }
