@@ -60,16 +60,16 @@ internal static class InsertToRetryQueueSqlCommand
              @RetriesCountValues,
              @NextRetryAfterValues,
              @LastRetryAtUtcValues
-        ) as u (topic, partition, offset_value, headers, key, value, timestamp, max_retries, min_retries_gap_ms, processing_period_ms, retries_count, next_retry_after, last_retry_at_utc);
-        --on conflict (consumer_group, topic, partition, offset_value)
-        --do update set
-        --    max_retries = excluded.max_retries,
-        --    min_retries_gap_ms = excluded.min_retries_gap_ms,
-        --    processing_period_ms = excluded.processing_period_ms,
-        --    retries_count = excluded.retries_count,
-        --    next_retry_after = excluded.next_retry_after,
-        --    processing_deadline = excluded.processing_deadline,
-        --    last_retry_at_utc = excluded.last_retry_at_utc;
+        ) as u (topic, partition, offset_value, headers, key, value, timestamp, max_retries, min_retries_gap_ms, processing_period_ms, retries_count, next_retry_after, last_retry_at_utc)
+        on conflict (consumer_group, topic, partition, offset_value)
+        do update set
+            max_retries = excluded.max_retries,
+            min_retries_gap_ms = excluded.min_retries_gap_ms,
+            processing_period_ms = excluded.processing_period_ms,
+            retries_count = excluded.retries_count,
+            next_retry_after = excluded.next_retry_after,
+            processing_deadline = excluded.processing_deadline,
+            last_retry_at_utc = excluded.last_retry_at_utc;
     """;
 
     public static CommandDefinition BuildCommandDefinition(

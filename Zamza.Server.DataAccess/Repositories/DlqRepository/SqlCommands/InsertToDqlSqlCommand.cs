@@ -46,11 +46,11 @@ internal static class InsertToDqlSqlCommand
             @Values,
             @TimestampValues,
             @RetriesCountValues
-        ) as u (topic, partition, offset_value, headers, key, value, timestamp, retries_count);
-        -- on conflict (consumer_group, topic, partition, offset_value) 
-        -- do update set
-        --     retries_count = excluded.retries_count,
-        --     became_poisoned_at_utc = excluded.became_poisoned_at_utc;
+        ) as u (topic, partition, offset_value, headers, key, value, timestamp, retries_count)
+        on conflict (consumer_group, topic, partition, offset_value) 
+        do update set
+            retries_count = excluded.retries_count,
+            became_poisoned_at_utc = excluded.became_poisoned_at_utc;
     """;
 
     public static CommandDefinition BuildCommandDefinition(
