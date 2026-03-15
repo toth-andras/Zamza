@@ -36,6 +36,20 @@ internal sealed class PartitionOwnershipRepository : IPartitionOwnershipReposito
             partitionOwnership => (partitionOwnership.Topic, partitionOwnership.Partition),
             partitionOwnership => partitionOwnership);
     }
+    
+    public async Task<IReadOnlyDictionary<(string Topic, int Partition), PartitionOwnership>> Get(
+        string consumerGroup, 
+        IDbTransactionFrame transaction,
+        CancellationToken cancellation)
+    {
+        var sqlCommand = GetPartitionOwnershipsForConsumerGroupSqlCommand.BuildCommandDefinition(
+            consumerGroup,
+            cancellation);
+
+        return (await transaction.Connection.QueryAsync<PartitionOwnership>(sqlCommand)).ToDictionary(
+            partitionOwnership => (partitionOwnership.Topic, partitionOwnership.Partition),
+            partitionOwnership => partitionOwnership);
+    }
 
     public async Task<CheckPartitionsOwnershipsRelevanceResponse> CheckPartitionsOwnershipsRelevance(
         string consumerGroup, 
@@ -70,73 +84,6 @@ internal sealed class PartitionOwnershipRepository : IPartitionOwnershipReposito
         return new CheckPartitionsOwnershipsRelevanceResponse(
             IsOwnershipRelevant: isOwnerForAllFetchedPartition,
             partitionOwnerships);
-    }
-
-    public async Task<CheckPartitionsOwnershipsRelevanceResponse> CheckPartitionsOwnershipsRelevance(
-        ConsumerPartitionOwnershipsSet ownershipsToCheck,
-        CancellationToken cancellationToken)
-    {
-        await using var connection = await _dbConnectionsManager.CreateConnection(cancellationToken);
-        
-        var sqlCommand = GetPartitionOwnershipsForConsumerGroupSqlCommand.BuildCommandDefinition(
-            ownershipsToCheck.ConsumerGroup,
-            cancellationToken);
-        
-        var ownershipsFromDb = (await connection.QueryAsync<PartitionOwnership>(sqlCommand)).ToList();
-
-        var validatedOwnerships = 0;
-        var allEpochsRelevant = true;
-        for (var i = 0; i < ownershipsFromDb.Count; i++)
-        {
-            if (ownershipsToCheck.TryGetOwnershipEpochForPartition(
-                    ownershipsFromDb[i].Topic,
-                    ownershipsFromDb[i].Partition,
-                    out var consumerOwnershipEpoch))
-            {
-                if (consumerOwnershipEpoch != ownershipsFromDb[i].Epoch)
-                {
-                    allEpochsRelevant = false;
-                    break;
-                }
-                validatedOwnerships++;
-            }
-        }
-        
-        var isOwnershipRelevant = allEpochsRelevant
-            && validatedOwnerships == ownershipsToCheck.Count; // = All consumer partition ownerships were validated
-        
-        return new CheckPartitionsOwnershipsRelevanceResponse(
-            isOwnershipRelevant,
-            ownershipsFromDb);
-    }
-
-    public async Task LockPartitions(
-        IDbTransactionFrame transaction,
-        string consumerGroup,
-        IReadOnlyList<TopicPartition> requestedPartitions,
-        CancellationToken cancellationToken)
-    {
-        if (requestedPartitions.Count == 0)
-        {
-            return;
-        }
-        
-        var topics = new string[requestedPartitions.Count];
-        var partitions = new int[requestedPartitions.Count];
-        for (var partitionIndex = 0; partitionIndex < requestedPartitions.Count; partitionIndex++)
-        {
-            topics[partitionIndex] = requestedPartitions[partitionIndex].Topic;
-            partitions[partitionIndex] = requestedPartitions[partitionIndex].Partition;
-        }
-
-        var command = LockPartitionsSqlCommand.BuildCommandDefinition(
-            transaction,
-            consumerGroup,
-            topics,
-            partitions,
-            cancellationToken);
-
-        await transaction.Connection.ExecuteAsync(command);
     }
 
     public async Task LockPartitions(
@@ -174,5 +121,56 @@ internal sealed class PartitionOwnershipRepository : IPartitionOwnershipReposito
         
         await using var connection = await _dbConnectionsManager.CreateConnection(cancellation);
         await connection.ExecuteAsync(command);
+    }
+
+    public async Task LockPartitions(
+        IDbTransactionFrame transaction, 
+        PartitionOwnershipClaimsSet partitionsSource,
+        CancellationToken cancellationToken)
+    {
+        var (topics, partitions, _) =  partitionsSource.ToDataArrays();
+
+        var command = LockPartitionsSqlCommand.BuildCommandDefinition(
+            transaction,
+            partitionsSource.ConsumerGroup,
+            topics,
+            partitions,
+            cancellationToken);
+        
+        await transaction.Connection.ExecuteAsync(command);
+    }
+
+    public async Task Insert(
+        IDbTransactionFrame transaction,
+        string consumerGroup,
+        int ownershipsCount,
+        IEnumerable<PartitionOwnership> consumerGroupOwnerships, CancellationToken cancellation)
+    {
+        var topics = new string[ownershipsCount];
+        var partitions = new int[ownershipsCount];
+        var epochs = new long[ownershipsCount];
+        var consumerIds = new string[ownershipsCount];
+
+        var index = 0;
+        foreach (var ownership in consumerGroupOwnerships)
+        {
+            topics[index] = ownership.Topic;
+            partitions[index] = ownership.Partition;
+            epochs[index] = ownership.Epoch;
+            consumerIds[index] = ownership.ConsumerId!;
+            index++;
+        }
+        
+        var command = InsertPartitionOwnershipsSqlCommand.BuildCommandDefinition(
+            transaction,
+            consumerGroup,
+            topics,
+            partitions,
+            epochs,
+            consumerIds,
+            _dateTimeProvider.UtcNow,
+            cancellation);
+        
+        await transaction.Connection.ExecuteAsync(command);
     }
 }

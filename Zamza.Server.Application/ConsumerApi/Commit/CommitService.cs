@@ -172,11 +172,11 @@ internal sealed class CommitService : ICommitService
             .ToArray();
 
         var toRemoveFromDlqPartitions = request.ProcessedMessages.PartitionValue
-            .Concat(request.PoisonedMessages.Select(message => message.Partition))
+            .Concat(request.FailedMessages.Select(message => message.Message.Partition))
             .ToArray();
         
         var toRemoveFromDlqOffsets = request.ProcessedMessages.OffsetValue
-            .Concat(request.PoisonedMessages.Select(message => message.Offset))
+            .Concat(request.FailedMessages.Select(message => message.Message.Offset))
             .ToArray();
         
         return (

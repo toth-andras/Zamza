@@ -9,6 +9,11 @@ public interface IPartitionOwnershipRepository
     Task<IReadOnlyDictionary<(string Topic, int Partition), PartitionOwnership>> Get(
         string consumerGroup, 
         CancellationToken cancellation);
+    
+    Task<IReadOnlyDictionary<(string Topic, int Partition), PartitionOwnership>> Get(
+        string consumerGroup, 
+        IDbTransactionFrame transaction,
+        CancellationToken cancellation);
 
     Task<CheckPartitionsOwnershipsRelevanceResponse> CheckPartitionsOwnershipsRelevance(
         string consumerGroup,
@@ -23,5 +28,17 @@ public interface IPartitionOwnershipRepository
     Task StopConsumerLeaderships(
         string consumerId,
         string consumerGroup,
+        CancellationToken cancellation);
+
+    Task LockPartitions(
+        IDbTransactionFrame transaction,
+        PartitionOwnershipClaimsSet partitionsSource,
+        CancellationToken cancellationToken);
+
+    Task Insert(
+        IDbTransactionFrame transaction,
+        string consumerGroup,
+        int ownershipsCount,
+        IEnumerable<PartitionOwnership> consumerGroupOwnerships,
         CancellationToken cancellation);
 }

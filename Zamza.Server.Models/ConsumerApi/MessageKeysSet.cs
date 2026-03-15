@@ -39,7 +39,7 @@ public sealed record MessageKeysSet
         params Array[] arrays)
     {
         var lenght = arrays[0].Length;
-        for (int i = 1; i < lenght; i++)
+        for (int i = 1; i < arrays.Length; i++)
         {
             if (arrays[i].Length != lenght)
             {
