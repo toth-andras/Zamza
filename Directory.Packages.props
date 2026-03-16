@@ -18,5 +18,7 @@
     <PackageVersion Include="Grpc.AspNetCore" Version="2.76.0" />
     
     <PackageVersion Include="OneOf" Version="3.0.271"/>
+
+    <PackageVersion Include="Confluent.Kafka" Version="2.13.2"/>
   </ItemGroup>
 </Project>

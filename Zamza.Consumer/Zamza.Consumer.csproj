@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <PackageReference Include="Google.Protobuf" />
+        <PackageReference Include="Grpc.Tools">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="Grpc.AspNetCore" />
+        <PackageReference Include="Confluent.Kafka" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Protobuf Include="..\Zamza.Server.ConsumerApi\protos\*\*.proto" GrpcServices="Client" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>ConsumerTest</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
+</Project>
