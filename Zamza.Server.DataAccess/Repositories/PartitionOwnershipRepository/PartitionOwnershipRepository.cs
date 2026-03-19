@@ -1,7 +1,6 @@
 using Dapper;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
-using Zamza.Server.DataAccess.Repositories.Models;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.Models;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.SqlCommands;
 using Zamza.Server.DataAccess.Utils.DateTimeProvider;

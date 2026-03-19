@@ -6,7 +6,7 @@ using NpgsqlTypes;
 
 namespace Zamza.Server.DataAccess.Common.DapperMapping;
 
-public sealed class JsonBTypeMapper<T> : SqlMapper.TypeHandler<T> where T : class
+internal sealed class JsonBTypeMapper<T> : SqlMapper.TypeHandler<T> where T : class
 {
     public override T? Parse(object? value)
     {

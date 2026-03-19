@@ -15,6 +15,8 @@ public static class ZamzaServiceCollectionExtensions
     public static IServiceCollection AddZamzaConsumer<TKey, TValue, TCustomProcessor>(
         this IServiceCollection services, ZamzaConsumerSettings<TKey, TValue> settings) where TCustomProcessor : class, ICustomProcessor<TKey, TValue>
     {
+        ValidateOptions(settings.KafkaConsumerConfig);
+        
         services.AddTransient<ICustomProcessor<TKey, TValue>, TCustomProcessor>();
         
         services.AddHostedService<ConsumptionController<TKey, TValue>>(sp =>
@@ -67,5 +69,18 @@ public static class ZamzaServiceCollectionExtensions
         });
 
         return services;
+    }
+
+    private static void ValidateOptions(ConsumerConfig config)
+    {
+        if (config.EnableAutoCommit is true)
+        {
+            throw new ArgumentException("enable.auto.commit must be false");
+        }
+    }
+
+    private static void SetupRequiredOptions(ConsumerConfig config)
+    {
+        config.EnableAutoCommit = false;
     }
 }
