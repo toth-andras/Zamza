@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Zamza.Server.Application.ConsumerApi.ClaimPartitionOwnership;
 using Zamza.Server.Application.ConsumerApi.Commit;
 using Zamza.Server.Application.ConsumerApi.Fetch;
 using Zamza.Server.Application.ConsumerApi.Leave;
@@ -20,7 +19,6 @@ public static class ServiceCollectionExtensions
     {
         services.AddTransient<IFetchService, FetchService>();
         services.AddTransient<ICommitService, CommitService>();
-        services.AddTransient<IClaimPartitionOwnershipService, ClaimPartitionOwnershipService>();
         services.AddTransient<IPingService, PingService>();
         services.AddTransient<ILeaveService, LeaveService>();
         

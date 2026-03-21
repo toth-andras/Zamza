@@ -9,7 +9,7 @@ public static class EndpointRouteBuilderExtensions
 {
     public static IEndpointRouteBuilder AddConsumerApiEndpoints(this IEndpointRouteBuilder applicationBuilder)
     {
-        applicationBuilder.MapGrpcService<ConsumerApiV1GrpcService>();
+        applicationBuilder.MapGrpcService<ConsumerApiGrpcService>();
         
         return applicationBuilder;
     }
