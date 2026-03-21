@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
 using Confluent.Kafka;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -38,17 +37,17 @@ public static class ZamzaServiceCollectionExtensions
             var kafkaConsumer = new ConsumerBuilder<TKey, TValue>(settings.KafkaConsumerConfig)
                 .SetPartitionsAssignedHandler((_, _) =>
                 {
-                    Console.WriteLine("============= Rebalance ===================");
+                    Console.WriteLine("=================== Kafka rebalance ===================");
                     metadata.MarkPartitionOwnershipUpdateAsRequired();
                 })
                 .SetPartitionsRevokedHandler((_, _) =>
                 {
-                    Console.WriteLine("============= Rebalance ===================");
+                    Console.WriteLine("=================== Kafka rebalance ===================");
                     metadata.MarkPartitionOwnershipUpdateAsRequired();
                 })
                 .SetPartitionsLostHandler((_, _) =>
                 {
-                    Console.WriteLine("============= Rebalance ===================");
+                    Console.WriteLine("=================== Kafka rebalance ===================");
                     metadata.MarkPartitionOwnershipUpdateAsRequired();
                 })
                 .Build();
