@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+package Zamza.ConsumerApi.V1;
+
+service ConsumerApiV1 {
+  rpc ClaimPartitionOwnership(ClaimPartitionOwnershipRequest) returns (ClaimPartitionOwnershipResponse);
+}
+
+message ConsumerGroupPartitionOwnershipSet {
+  string consumer_group = 1;
+  repeated PartitionOwnership partition_ownerships = 2;
+
+  message PartitionOwnership {
+    string topic = 1;
+    int32 partition = 2;
+    int64 owner_epoch = 3;
+  }
+}
+
+message ClaimPartitionOwnershipRequest {
+  string consumer_id = 1;
+  string consumer_group = 2;
+  
+  message PartitionClaim {
+    string topic = 1;
+    int32 partition = 2;
+    int64 previous_owner_epoch = 3;
+  }
+}
+
+message ClaimPartitionOwnershipResponse {
+  ConsumerGroupPartitionOwnershipSet current_ownerships_for_consumer_group = 1;
+  
+  message ClaimPartitionOwnershipResultOk {}
+  message ClaimPartitionOwnershipResultObsoleteClaim {}
+}
