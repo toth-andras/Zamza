@@ -1,44 +1,25 @@
 using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
+using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.Mapping;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.Models;
-using Zamza.Server.Models.ConsumerApi;
+using Zamza.Server.Models.ConsumerApi.Common;
 
 namespace Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository;
 
 public interface IPartitionOwnershipRepository
 {
-    Task<IReadOnlyDictionary<(string Topic, int Partition), PartitionOwnership>> Get(
-        string consumerGroup, 
-        CancellationToken cancellation);
-    
-    Task<IReadOnlyDictionary<(string Topic, int Partition), PartitionOwnership>> Get(
-        string consumerGroup, 
-        IDbTransactionFrame transaction,
-        CancellationToken cancellation);
-
-    Task<CheckPartitionsOwnershipsRelevanceResponse> CheckPartitionsOwnershipsRelevance(
-        string consumerGroup,
-        IReadOnlyCollection<PartitionFetch> fetchesToCheck,
-        CancellationToken cancellation);
-    
     Task LockPartitions(
         IDbTransactionFrame transaction,
-        ConsumerPartitionOwnershipsSet partitionOwnerships,
+        string consumerGroup,
+        IReadOnlyList<PartitionToLock> claimedPartitions,
         CancellationToken cancellationToken);
 
-    Task StopConsumerLeaderships(
-        string consumerId,
-        string consumerGroup,
-        CancellationToken cancellation);
-
-    Task LockPartitions(
+    Task<ConsumerGroupPartitionOwnershipSet> GetForConsumerGroup(
         IDbTransactionFrame transaction,
-        PartitionOwnershipClaimsSet partitionsSource,
+        string consumerGroup,
         CancellationToken cancellationToken);
 
-    Task Insert(
+    Task Upsert(
         IDbTransactionFrame transaction,
-        string consumerGroup,
-        int ownershipsCount,
-        IEnumerable<PartitionOwnership> consumerGroupOwnerships,
-        CancellationToken cancellation);
+        ConsumerGroupPartitionOwnershipSet partitionOwnerships,
+        CancellationToken cancellationToken);
 }

@@ -23,16 +23,21 @@ message ConsumerGroupPartitionOwnershipSet {
 message ClaimPartitionOwnershipRequest {
   string consumer_id = 1;
   string consumer_group = 2;
+  repeated PartitionClaim partition_claims = 3;
   
   message PartitionClaim {
     string topic = 1;
     int32 partition = 2;
-    int64 previous_owner_epoch = 3;
+    int64 current_owner_epoch = 3;
   }
 }
 
 message ClaimPartitionOwnershipResponse {
   ConsumerGroupPartitionOwnershipSet current_ownerships_for_consumer_group = 1;
+  oneof Result {
+      ClaimPartitionOwnershipResultOk Ok = 2;
+      ClaimPartitionOwnershipResultObsoleteClaim ObsoleteClaim = 3;
+  }
   
   message ClaimPartitionOwnershipResultOk {}
   message ClaimPartitionOwnershipResultObsoleteClaim {}

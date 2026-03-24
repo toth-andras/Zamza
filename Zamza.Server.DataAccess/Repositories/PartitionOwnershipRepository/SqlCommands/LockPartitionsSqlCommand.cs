@@ -1,5 +1,5 @@
+using System.Data.Common;
 using Dapper;
-using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
 
 namespace Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.SqlCommands;
 
@@ -18,7 +18,7 @@ internal static class LockPartitionsSqlCommand
     """;
 
     public static CommandDefinition BuildCommandDefinition(
-        IDbTransactionFrame  transaction,
+        DbTransaction  transaction,
         string consumerGroup,
         string[] topics,
         int[] partitions,
@@ -32,7 +32,7 @@ internal static class LockPartitionsSqlCommand
                 Topics = topics,
                 Partitions = partitions
             },
-            transaction: transaction.Transaction,
+            transaction: transaction,
             commandTimeout: TimeoutInSeconds,
             cancellationToken: cancellationToken);
     }
