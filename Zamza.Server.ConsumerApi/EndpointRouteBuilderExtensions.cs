@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
-using Zamza.Server.ConsumerApi.GrpcServices;
 using Zamza.Server.ConsumerApi.GrpcServices.V1;
 
 namespace Zamza.Server.ConsumerApi;
