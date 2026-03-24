@@ -17,13 +17,10 @@ public sealed class _20260306133100_RetryQueue_Initialize : SqlMigrationBase
             key bytea,
             value bytea,
             timestamp timestamp with time zone not null,
-            max_retries integer not null,
-            min_retries_gap_ms bigint not null,
-            processing_period_ms bigint,
+            max_retries_count integer not null,
             retries_count integer not null,
+            processing_deadline_utc timestamp with time zone,
             next_retry_after timestamp with time zone not null,
-            processing_deadline timestamp with time zone,
-            last_retry_at_utc timestamp,
             version smallint not null
         );
     """;
