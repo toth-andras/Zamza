@@ -1,5 +1,4 @@
 using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
-using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.Mapping;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.Models;
 using Zamza.Server.Models.ConsumerApi.Common;
 

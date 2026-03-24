@@ -2,7 +2,7 @@ using Dapper;
 
 namespace Zamza.Server.DataAccess.Common.DapperMapping;
 
-public static class DapperMappingExtensions
+internal static class DapperMappingExtensions
 {
     public static void Configure()
     {
