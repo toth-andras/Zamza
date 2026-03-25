@@ -9,6 +9,8 @@ public sealed record ConsumerGroupPartitionOwnershipSet
     
     public string ConsumerGroup { get; }
 
+    public int PartitionCount => _partitionOwnerships.Count;
+
     public ConsumerGroupPartitionOwnershipSet(
         string consumerGroup,
         IEnumerable<ConsumerGroupPartitionOwnership> partitionOwnerships)
@@ -19,11 +21,16 @@ public sealed record ConsumerGroupPartitionOwnershipSet
             partitionOwnership => partitionOwnership);
     }
 
-    public long GetCurrentOwnerForPartition(string topic, int partition)
+    public long GetOwnerEpochForPartition(string topic, int partition)
     {
         return _partitionOwnerships.TryGetValue((topic, partition), out var ownership)
             ? ownership.OwnerEpoch
             : ConsumerGroupPartitionOwnership.InitialPartitionOwnerEpoch;
+    }
+
+    public bool IsPartitionRegistered(string topic, int partition)
+    {
+        return _partitionOwnerships.ContainsKey((topic, partition));
     }
 
     public void SetNewPartitionOwner(

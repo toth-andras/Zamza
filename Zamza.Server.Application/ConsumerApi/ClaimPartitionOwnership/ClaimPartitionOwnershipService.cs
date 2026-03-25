@@ -48,7 +48,7 @@ internal sealed class ClaimPartitionOwnershipService : IClaimPartitionOwnershipS
         foreach (var partitionClaim in claims.Partitions)
         {
             if (partitionClaim.CurrentOwnerEpoch !=
-                consumerGroupPartitionOwnerships.GetCurrentOwnerForPartition(partitionClaim.Topic, partitionClaim.Partition))
+                consumerGroupPartitionOwnerships.GetOwnerEpochForPartition(partitionClaim.Topic, partitionClaim.Partition))
             {
                 await transaction.Commit(cancellationToken);
                 return new ClaimPartitionOwnershipResponse(

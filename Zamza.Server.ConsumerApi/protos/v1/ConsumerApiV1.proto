@@ -7,7 +7,10 @@ package Zamza.ConsumerApi.V1;
 
 service ConsumerApiV1 {
   rpc ClaimPartitionOwnership(ClaimPartitionOwnershipRequest) returns (ClaimPartitionOwnershipResponse);
+  rpc Fetch(FetchRequest) returns (FetchResponse);
 }
+
+// Common models
 
 message ConsumerGroupPartitionOwnershipSet {
   string consumer_group = 1;
@@ -20,6 +23,9 @@ message ConsumerGroupPartitionOwnershipSet {
   }
 }
 
+
+// Request-specific models
+
 message ClaimPartitionOwnershipRequest {
   string consumer_id = 1;
   string consumer_group = 2;
@@ -31,7 +37,6 @@ message ClaimPartitionOwnershipRequest {
     int64 current_owner_epoch = 3;
   }
 }
-
 message ClaimPartitionOwnershipResponse {
   ConsumerGroupPartitionOwnershipSet current_ownerships_for_consumer_group = 1;
   oneof Result {
@@ -41,4 +46,43 @@ message ClaimPartitionOwnershipResponse {
   
   message ClaimPartitionOwnershipResultOk {}
   message ClaimPartitionOwnershipResultObsoleteClaim {}
+}
+
+message FetchRequest {
+  string consumer_id = 1;
+  string consumer_group = 2;
+  repeated FetchedPartition partitions = 3;
+  int32 limit = 4;
+  
+  message FetchedPartition {
+    string topic = 1;
+    int32 partition = 2;
+    int64 ownership_epoch = 3;
+    int64 kafka_offset = 4;
+  }
+}
+message FetchResponse {
+  ConsumerGroupPartitionOwnershipSet current_ownerships_for_consumer_group = 1;
+  oneof Result {
+    FetchResultOk Ok = 2;
+    FetchResultObsoleteOwnership ObsoleteOwnership = 3;
+  }
+  
+  message FetchResultOk {
+    repeated FetchedMessage messages = 1;
+    
+    message FetchedMessage {
+      string topic = 1;
+      int32 partition = 2;
+      int64 offset = 3;
+      map<string, bytes> headers = 4;
+      google.protobuf.BytesValue key = 5;
+      google.protobuf.BytesValue value = 6;
+      google.protobuf.Timestamp timestamp = 7;
+      int32 max_retries_count = 8;
+      int32 retries_count = 9;
+      google.protobuf.Timestamp processing_deadline_utc = 10;
+    }
+  }
+  message FetchResultObsoleteOwnership {}
 }

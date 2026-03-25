@@ -16,6 +16,10 @@ public interface IPartitionOwnershipRepository
         IDbTransactionFrame transaction,
         string consumerGroup,
         CancellationToken cancellationToken);
+    
+    Task<ConsumerGroupPartitionOwnershipSet> GetForConsumerGroup(
+        string consumerGroup,
+        CancellationToken cancellationToken);
 
     Task Upsert(
         IDbTransactionFrame transaction,

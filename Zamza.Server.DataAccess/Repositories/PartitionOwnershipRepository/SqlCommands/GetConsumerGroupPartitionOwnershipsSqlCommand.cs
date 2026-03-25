@@ -21,8 +21,8 @@ internal static class GetConsumerGroupPartitionOwnershipsSqlCommand
     """;
 
     public static CommandDefinition CreateCommandDefinition(
-        DbTransaction transaction,
         string consumerGroup,
+        DbTransaction? transaction,
         CancellationToken cancellationToken)
     {
         return new CommandDefinition(
@@ -32,7 +32,7 @@ internal static class GetConsumerGroupPartitionOwnershipsSqlCommand
                 ConsumerGroup =  consumerGroup,
             },
             transaction: transaction,
-            commandTimeout:  TimeoutInSeconds,
+            commandTimeout: TimeoutInSeconds,
             cancellationToken: cancellationToken);
     }
 }

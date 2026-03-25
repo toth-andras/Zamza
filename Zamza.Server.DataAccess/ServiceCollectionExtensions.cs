@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement;
 using Zamza.Server.DataAccess.Common.DapperMapping;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository;
+using Zamza.Server.DataAccess.Repositories.RetryQueueRepository;
 using Zamza.Server.DataAccess.Utils.DateTimeProvider;
 
 namespace Zamza.Server.DataAccess;
@@ -20,7 +21,8 @@ public static class ServiceCollectionExtensions
         
         DapperMappingExtensions.Configure();
 
-        services.AddTransient<IPartitionOwnershipRepository, PartitionOwnershipRepository>();
+        services.AddScoped<IPartitionOwnershipRepository, PartitionOwnershipRepository>();
+        services.AddScoped<IRetryQueueRepository, RetryQueueRepository>();
         
         return services;
     }

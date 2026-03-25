@@ -1,3 +1,4 @@
+using System.Data;
 using Dapper;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
@@ -24,6 +25,11 @@ internal sealed class PartitionOwnershipRepository : IPartitionOwnershipReposito
         IReadOnlyList<PartitionToLock> claimedPartitions,
         CancellationToken cancellationToken)
     {
+        if (claimedPartitions.Count == 0)
+        {
+            return;
+        }
+        
         var topicValues = new string[claimedPartitions.Count];
         var partitionValues = new int[claimedPartitions.Count];
 
@@ -49,12 +55,30 @@ internal sealed class PartitionOwnershipRepository : IPartitionOwnershipReposito
         CancellationToken cancellationToken)
     {
         var command = GetConsumerGroupPartitionOwnershipsSqlCommand.CreateCommandDefinition(
-            transaction.Transaction,
             consumerGroup,
+            transaction.Transaction,
             cancellationToken);
         
         var partitionOwnerships = await transaction.Connection
             .QueryAsync<PartitionOwnershipDto>(command);
+        
+        return new ConsumerGroupPartitionOwnershipSet(
+            consumerGroup,
+            partitionOwnerships.Select(ownership => ownership.ToModel()));
+    }
+
+    public async Task<ConsumerGroupPartitionOwnershipSet> GetForConsumerGroup(
+        string consumerGroup,
+        CancellationToken cancellationToken)
+    {
+        var command = GetConsumerGroupPartitionOwnershipsSqlCommand.CreateCommandDefinition(
+            consumerGroup,
+            transaction: null,
+            cancellationToken);
+        
+        await using var connection = await _dbConnectionsManager.CreateConnection(cancellationToken);
+        
+        var partitionOwnerships = await connection.QueryAsync<PartitionOwnershipDto>(command);
         
         return new ConsumerGroupPartitionOwnershipSet(
             consumerGroup,
@@ -66,6 +90,11 @@ internal sealed class PartitionOwnershipRepository : IPartitionOwnershipReposito
         ConsumerGroupPartitionOwnershipSet partitionOwnerships,
         CancellationToken cancellationToken)
     {
+        if (partitionOwnerships.PartitionCount == 0)
+        {
+            return;
+        }
+        
         var ownershipDtos = partitionOwnerships
             .Select(ownership => ownership.ToDto(partitionOwnerships.ConsumerGroup))
             .ToList();
