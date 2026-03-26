@@ -15,7 +15,7 @@ public sealed record FetchedPartition
         long ownershipEpoch,
         long kafkaOffset)
     {
-        Throw.IfEmpty(topic, "Fetched partition topic");
+        ThrowBadRequest.IfEmpty(topic, "Fetched partition topic");
         
         Topic = topic;
         Partition = partition;

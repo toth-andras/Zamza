@@ -2,7 +2,7 @@ using Zamza.Server.Models.Exceptions;
 
 namespace Zamza.Server.Models.Validators;
 
-public static class Throw
+public static class ThrowBadRequest
 {
     public static void IfEmpty(string? str, string paramName)
     {

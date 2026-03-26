@@ -20,8 +20,8 @@ public sealed record ConsumerGroupPartitionOwnership
         string? ownerConsumerId,
         DateTimeOffset timestampUtc)
     {
-        Throw.IfEmpty(topic, "Partition ownership topic name");
-        Throw.IfNotUtc(timestampUtc, "Partition ownership timestamp");
+        ThrowBadRequest.IfEmpty(topic, "Partition ownership topic name");
+        ThrowBadRequest.IfNotUtc(timestampUtc, "Partition ownership timestamp");
         
         Topic = topic;
         Partition = partition;
@@ -49,8 +49,8 @@ public sealed record ConsumerGroupPartitionOwnership
         long previousOwnerEpoch,
         DateTimeOffset timestampUtc)
     {
-        Throw.IfEmpty(newOwnerConsumerId, "New partition owner ConsumerId");
-        Throw.IfNotUtc(timestampUtc, "Partition ownership claim timestamp");
+        ThrowBadRequest.IfEmpty(newOwnerConsumerId, "New partition owner ConsumerId");
+        ThrowBadRequest.IfNotUtc(timestampUtc, "Partition ownership claim timestamp");
         if (previousOwnerEpoch != OwnerEpoch)
         {
             throw new BadRequestException("The epoch of previous partition owner is not correct");
