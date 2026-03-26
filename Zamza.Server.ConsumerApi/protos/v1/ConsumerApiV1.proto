@@ -8,19 +8,33 @@ package Zamza.ConsumerApi.V1;
 service ConsumerApiV1 {
   rpc ClaimPartitionOwnership(ClaimPartitionOwnershipRequest) returns (ClaimPartitionOwnershipResponse);
   rpc Fetch(FetchRequest) returns (FetchResponse);
+  rpc Commit(CommitRequest) returns (CommitResponse);
 }
 
 // Common models
 
+message PartitionOwnership {
+  string topic = 1;
+  int32 partition = 2;
+  int64 owner_epoch = 3;
+}
+
 message ConsumerGroupPartitionOwnershipSet {
   string consumer_group = 1;
   repeated PartitionOwnership partition_ownerships = 2;
+}
 
-  message PartitionOwnership {
-    string topic = 1;
-    int32 partition = 2;
-    int64 owner_epoch = 3;
-  }
+message ConsumerApiMessageCore {
+  string topic = 1;
+  int32 partition = 2;
+  int64 offset = 3;
+  map<string, bytes> headers = 4;
+  google.protobuf.BytesValue key = 5;
+  google.protobuf.BytesValue value = 6;
+  google.protobuf.Timestamp timestamp = 7;
+  int32 max_retries_count = 8;
+  int32 retries_count = 9;
+  google.protobuf.Timestamp processing_deadline_utc = 10;
 }
 
 
@@ -69,20 +83,40 @@ message FetchResponse {
   }
   
   message FetchResultOk {
-    repeated FetchedMessage messages = 1;
-    
-    message FetchedMessage {
-      string topic = 1;
-      int32 partition = 2;
-      int64 offset = 3;
-      map<string, bytes> headers = 4;
-      google.protobuf.BytesValue key = 5;
-      google.protobuf.BytesValue value = 6;
-      google.protobuf.Timestamp timestamp = 7;
-      int32 max_retries_count = 8;
-      int32 retries_count = 9;
-      google.protobuf.Timestamp processing_deadline_utc = 10;
-    }
+    repeated ConsumerApiMessageCore messages = 1;
   }
   message FetchResultObsoleteOwnership {}
+}
+
+message CommitRequest {
+  string consumer_id = 1;
+  string consumer_group = 2;
+  repeated PartitionOwnership ownerships_for_processed_partitions = 3;
+  
+  repeated ProcessedMessage processed_messages = 4;
+  repeated RetryableMessage retryable_messages = 5;
+  repeated FailedMessage failed_messages = 6;
+  
+  message ProcessedMessage {
+    string topic = 1;
+    int32 partition = 2;
+    int64 offset = 3;
+  }
+  message RetryableMessage {
+    ConsumerApiMessageCore message = 1;
+    int64 next_retry_after_ms = 2;
+  }
+  message FailedMessage {
+    ConsumerApiMessageCore message = 1;
+    google.protobuf.Timestamp failed_at_utc = 2;
+  }
+}
+message CommitResponse {
+  ConsumerGroupPartitionOwnershipSet current_ownerships_for_consumer_group = 1;
+  repeated Partition partitions_with_obsolete_ownership = 2;
+  
+  message Partition {
+    string topic = 1;
+    int32 partition = 2;
+  }
 }

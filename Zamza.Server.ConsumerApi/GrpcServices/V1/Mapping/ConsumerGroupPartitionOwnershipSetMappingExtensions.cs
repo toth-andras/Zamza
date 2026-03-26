@@ -1,6 +1,6 @@
 using GrpcOwnershipSet = Zamza.ConsumerApi.V1.ConsumerGroupPartitionOwnershipSet;
 using ModelPartitionOwnershipSet = Zamza.Server.Models.ConsumerApi.Common.ConsumerGroupPartitionOwnershipSet;
-using GrpcPartitionOwnership = Zamza.ConsumerApi.V1.ConsumerGroupPartitionOwnershipSet.Types.PartitionOwnership;
+using GrpcPartitionOwnership = Zamza.ConsumerApi.V1.PartitionOwnership;
 using ModelPartitionOwnership = Zamza.Server.Models.ConsumerApi.Common.ConsumerGroupPartitionOwnership;
 
 namespace Zamza.Server.ConsumerApi.GrpcServices.V1.Mapping;
