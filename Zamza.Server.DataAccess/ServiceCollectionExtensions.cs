@@ -2,9 +2,9 @@ using FluentMigrator.Runner;
 using Microsoft.Extensions.DependencyInjection;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement;
 using Zamza.Server.DataAccess.Common.DapperMapping;
+using Zamza.Server.DataAccess.Repositories.DLQRepository;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository;
 using Zamza.Server.DataAccess.Repositories.RetryQueueRepository;
-using Zamza.Server.DataAccess.Utils.DateTimeProvider;
 
 namespace Zamza.Server.DataAccess;
 
@@ -16,13 +16,12 @@ public static class ServiceCollectionExtensions
         
         services.AddFluentMigrator(connectionString);
         services.AddConnectionFactory(connectionString);
-
-        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         
         DapperMappingExtensions.Configure();
 
         services.AddScoped<IPartitionOwnershipRepository, PartitionOwnershipRepository>();
         services.AddScoped<IRetryQueueRepository, RetryQueueRepository>();
+        services.AddScoped<IDLQRepository, DLQRepository>();
         
         return services;
     }
