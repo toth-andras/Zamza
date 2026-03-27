@@ -6,6 +6,7 @@ namespace Zamza.Server.DataAccess.Repositories.RetryQueueRepository.SqlCommands;
 internal static class FetchRetryQueueMessagesSqlCommand
 {
     private const int TimeoutInSeconds = 10;
+    private const int MaxLimit = 100;
     
     private const string Sql = 
     $"""
@@ -53,7 +54,7 @@ internal static class FetchRetryQueueMessagesSqlCommand
                 Topics = topics,
                 Partitions = partitions,
                 KafkaOffsets = kafkaOffsets,
-                Limit = limit
+                Limit = Math.Min(limit, MaxLimit)
             },
             commandTimeout: TimeoutInSeconds,
             cancellationToken: cancellationToken);
