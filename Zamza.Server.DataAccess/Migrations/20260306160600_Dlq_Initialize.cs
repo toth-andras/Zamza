@@ -9,6 +9,7 @@ public class _20260306160600_Dlq_Initialize : SqlMigrationBase
     """
         create table if not exists zamza.dlq
         (
+            id bigint generated always as identity primary key,
             consumer_group text not null,
             topic text not null,
             partition integer not null,
