@@ -1,5 +1,6 @@
 using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
 using Zamza.Server.DataAccess.Repositories.CommonModels;
+using Zamza.Server.Models.ConsumerApi.Commit;
 using Zamza.Server.Models.ConsumerApi.Fetch;
 
 namespace Zamza.Server.DataAccess.Repositories.RetryQueueRepository;
@@ -16,5 +17,11 @@ public interface IRetryQueueRepository
         IDbTransactionFrame transaction,
         string consumerGroup,
         IReadOnlyCollection<MessageToDelete> messages,
+        CancellationToken cancellationToken);
+    
+    Task Upsert(
+        IDbTransactionFrame transaction,
+        string consumerGroup,
+        IReadOnlyCollection<RetryableMessage> messages,
         CancellationToken cancellationToken);
 }

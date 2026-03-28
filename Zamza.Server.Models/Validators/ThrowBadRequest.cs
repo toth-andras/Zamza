@@ -35,8 +35,8 @@ public static class ThrowBadRequest
             throw new BadRequestException($"{paramName} must be positive");
         }
     }
-
-    public static void IfNegative(int number, string paramName)
+    
+    public static void IfNegative(long number, string paramName)
     {
         if (number < 0)
         {

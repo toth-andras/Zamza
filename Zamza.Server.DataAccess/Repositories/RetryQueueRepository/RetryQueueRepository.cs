@@ -5,6 +5,7 @@ using Zamza.Server.DataAccess.Repositories.CommonModels;
 using Zamza.Server.DataAccess.Repositories.RetryQueueRepository.Mapping;
 using Zamza.Server.DataAccess.Repositories.RetryQueueRepository.Models;
 using Zamza.Server.DataAccess.Repositories.RetryQueueRepository.SqlCommands;
+using Zamza.Server.Models.ConsumerApi.Commit;
 using Zamza.Server.Models.ConsumerApi.Fetch;
 
 namespace Zamza.Server.DataAccess.Repositories.RetryQueueRepository;
@@ -84,6 +85,25 @@ internal sealed class RetryQueueRepository : IRetryQueueRepository
             topicValues,
             partitionValues,
             offsetValues,
+            cancellationToken);
+        
+        await transaction.Connection.ExecuteAsync(command);
+    }
+
+    public async Task Upsert(
+        IDbTransactionFrame transaction,
+        string consumerGroup,
+        IReadOnlyCollection<RetryableMessage> messages,
+        CancellationToken cancellationToken)
+    {
+        var messageDtos = messages
+            .Select(message => message.ToDto())
+            .ToList();
+
+        var command = UpsertRetryQueueMessagesSqlCommand.BuildCommandDefinition(
+            transaction.Transaction,
+            consumerGroup,
+            messageDtos,
             cancellationToken);
         
         await transaction.Connection.ExecuteAsync(command);
