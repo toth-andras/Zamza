@@ -1,6 +1,7 @@
 using System.Data;
 using System.Data.Common;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
+using Zamza.Server.Models.Exceptions;
 
 namespace Zamza.Server.DataAccess.Common.ConnectionsManagement;
 
@@ -20,7 +21,7 @@ internal sealed class DbConnectionsManager : IDbConnectionsManager
 
         if (connection.State is not ConnectionState.Open)
         {
-            throw new ApplicationException("Could not open db connection");
+            throw new InternalException("Could not open db connection");
         }
 
         return connection;
@@ -44,7 +45,7 @@ internal sealed class DbConnectionsManager : IDbConnectionsManager
 
         if (connection is null || transaction is null)
         {
-            throw new ApplicationException("Could not begin transaction");
+            throw new InternalException("Could not begin transaction");
         }
         
         return new DbTransactionFrame(connection, transaction);

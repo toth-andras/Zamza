@@ -5,6 +5,7 @@ using Zamza.Server.DataAccess.Common.DapperMapping;
 using Zamza.Server.DataAccess.Repositories.DLQRepository;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository;
 using Zamza.Server.DataAccess.Repositories.RetryQueueRepository;
+using Zamza.Server.Models.Exceptions;
 
 namespace Zamza.Server.DataAccess;
 
@@ -51,6 +52,6 @@ public static class ServiceCollectionExtensions
     {
         const string dbConnectionStringEnvironmentVariableName = "DB_CONNECTION_STRING";
         return Environment.GetEnvironmentVariable(dbConnectionStringEnvironmentVariableName)
-                               ?? throw new ApplicationException($"{dbConnectionStringEnvironmentVariableName} must be set");
+                               ?? throw new InternalException($"{dbConnectionStringEnvironmentVariableName} must be set");
     }
 }
