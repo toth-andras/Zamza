@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Zamza.Server.Application.ConsumerApi.ClaimPartitionOwnership;
+using Zamza.Server.Application.ConsumerApi.Commit;
 using Zamza.Server.Application.ConsumerApi.Fetch;
 
 namespace Zamza.Server.Application;
@@ -17,6 +18,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IClaimPartitionOwnershipService, ClaimPartitionOwnershipService>();
         services.AddScoped<IFetchService, FetchService>();
+        services.AddScoped<ICommitService, CommitService>();
         
         return services;
     }
