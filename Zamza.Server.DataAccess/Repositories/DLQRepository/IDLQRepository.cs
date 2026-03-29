@@ -1,5 +1,6 @@
 using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
 using Zamza.Server.DataAccess.Repositories.CommonModels;
+using Zamza.Server.Models.ConsumerApi.Commit;
 
 namespace Zamza.Server.DataAccess.Repositories.DLQRepository;
 
@@ -9,5 +10,11 @@ public interface IDLQRepository
         IDbTransactionFrame transaction,
         string consumerGroup,
         IReadOnlyCollection<MessageToDelete> messages,
+        CancellationToken cancellationToken);
+
+    Task Upsert(
+        IDbTransactionFrame transaction,
+        string consumerGroup,
+        IReadOnlyCollection<FailedMessage> messages,
         CancellationToken cancellationToken);
 }
