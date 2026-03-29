@@ -15,6 +15,11 @@ internal sealed class DLQRepository : IDLQRepository
         IReadOnlyCollection<MessageToDeleteDto> messages,
         CancellationToken cancellationToken)
     {
+        if (messages.Count == 0)
+        {
+            return;
+        }
+        
         var command = DeleteDLQMessagesSqlCommand.BuildCommandDefinition(
             transaction.Transaction,
             consumerGroup,
@@ -30,6 +35,11 @@ internal sealed class DLQRepository : IDLQRepository
         IReadOnlyCollection<FailedMessage> messages,
         CancellationToken cancellationToken)
     {
+        if (messages.Count == 0)
+        {
+            return;
+        }
+        
         var messageDtos = messages
             .Select(message => message.ToDto())
             .ToList();

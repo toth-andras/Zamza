@@ -66,6 +66,11 @@ internal sealed class RetryQueueRepository : IRetryQueueRepository
         IReadOnlyCollection<MessageToDeleteDto> messages,
         CancellationToken cancellationToken)
     {
+        if (messages.Count == 0)
+        {
+            return;
+        }
+        
         var command = DeleteRetryQueueMessagesSqlCommand.BuildCommandDefinition(
             transaction.Transaction,
             consumerGroup,
@@ -81,6 +86,11 @@ internal sealed class RetryQueueRepository : IRetryQueueRepository
         IReadOnlyCollection<RetryableMessage> messages,
         CancellationToken cancellationToken)
     {
+        if (messages.Count == 0)
+        {
+            return;
+        }
+        
         var messageDtos = messages
             .Select(message => message.ToDto())
             .ToList();
