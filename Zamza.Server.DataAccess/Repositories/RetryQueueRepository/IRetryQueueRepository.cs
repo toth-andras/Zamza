@@ -13,7 +13,7 @@ public interface IRetryQueueRepository
         int limit,
         CancellationToken cancellationToken);
     
-    Task DeleteMessages(
+    Task Delete(
         IDbTransactionFrame transaction,
         string consumerGroup,
         IReadOnlyCollection<MessageToDelete> messages,

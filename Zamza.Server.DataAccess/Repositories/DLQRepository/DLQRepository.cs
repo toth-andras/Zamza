@@ -9,7 +9,7 @@ namespace Zamza.Server.DataAccess.Repositories.DLQRepository;
 
 internal sealed class DLQRepository : IDLQRepository
 {
-    public async Task DeleteMessages(
+    public async Task Delete(
         IDbTransactionFrame transaction,
         string consumerGroup,
         IReadOnlyCollection<MessageToDelete> messages,

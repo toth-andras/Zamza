@@ -60,7 +60,7 @@ internal sealed class RetryQueueRepository : IRetryQueueRepository
             .ToList();
     }
 
-    public async Task DeleteMessages(
+    public async Task Delete(
         IDbTransactionFrame transaction,
         string consumerGroup,
         IReadOnlyCollection<MessageToDelete> messages,

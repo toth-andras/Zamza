@@ -6,7 +6,7 @@ namespace Zamza.Server.DataAccess.Repositories.DLQRepository;
 
 public interface IDLQRepository
 {
-    Task DeleteMessages(
+    Task Delete(
         IDbTransactionFrame transaction,
         string consumerGroup,
         IReadOnlyCollection<MessageToDelete> messages,
