@@ -1,4 +1,3 @@
-using System.Data;
 using Dapper;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
@@ -30,20 +29,10 @@ internal sealed class PartitionOwnershipRepository : IPartitionOwnershipReposito
             return;
         }
         
-        var topicValues = new string[claimedPartitions.Count];
-        var partitionValues = new int[claimedPartitions.Count];
-
-        for (var i = 0; i < claimedPartitions.Count; i++)
-        {
-            topicValues[i] = claimedPartitions[i].Topic;
-            partitionValues[i] = claimedPartitions[i].Partition;
-        }
-        
         var command = LockPartitionsSqlCommand.BuildCommandDefinition(
             transaction.Transaction,
             consumerGroup,
-            topicValues,
-            partitionValues,
+            claimedPartitions,
             cancellationToken);
         
         await transaction.Connection.ExecuteAsync(command);
