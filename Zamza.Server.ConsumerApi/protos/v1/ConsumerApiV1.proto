@@ -113,9 +113,9 @@ message CommitRequest {
 }
 message CommitResponse {
   ConsumerGroupPartitionOwnershipSet current_ownerships_for_consumer_group = 1;
-  repeated Partition partitions_with_obsolete_ownership = 2;
+  repeated PartitionWithIrrelevantOwnership partitions_with_irrelevant_ownership = 2;
   
-  message Partition {
+  message PartitionWithIrrelevantOwnership {
     string topic = 1;
     int32 partition = 2;
   }
