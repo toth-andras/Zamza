@@ -9,28 +9,8 @@ internal static class LockPartitionsSqlCommand
     private const int TimeoutInSeconds = 10;
 
     private static string Sql =>
-    $"""
-        do
-        $$
-            declare topic_partition record;
-            begin
-                for topic_partition in
-                    select 
-                        topic,
-                        partition
-                    from unnest
-                    (
-                        @{nameof(Parameters.Topics)},
-                        @{nameof(Parameters.Partitions)}
-                    ) as claimed_partitions (topic, partition)
-                    order by topic, partition
-                loop
-                    perform pg_advisory_xact_lock(
-                        hashtextextended(@{nameof(Parameters.ConsumerGroup)} || ';' || topic_partition.topic || ';' || topic_partition.partition::text, 0)
-                    );
-                end loop;
-            end;
-        $$;
+    """
+        call zamza.lock_partitions(@ConsumerGroup, @Topics::text[], @Partitions::int[]);
     """;
 
     public static CommandDefinition BuildCommandDefinition(
