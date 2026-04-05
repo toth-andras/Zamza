@@ -4,7 +4,7 @@ namespace Zamza.Server.Models.Exceptions;
 
 public sealed class TimeoutException : ZamzaException
 {
-    public override int HttpErrorCode => (int)HttpStatusCode.GatewayTimeout;
+    public override HttpStatusCode HttpErrorCode => HttpStatusCode.GatewayTimeout;
     
     public TimeoutException(string message) : base(message) { }
 

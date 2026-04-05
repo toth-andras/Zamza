@@ -4,7 +4,7 @@ namespace Zamza.Server.Models.Exceptions;
 
 public sealed class InternalException : ZamzaException
 {
-    public override int HttpErrorCode => (int)HttpStatusCode.InternalServerError;
+    public override HttpStatusCode HttpErrorCode => HttpStatusCode.InternalServerError;
     
     public InternalException(string message) : base(message) { }
 

@@ -2,7 +2,7 @@ using System.Data;
 using Dapper;
 using Microsoft.Data.SqlClient;
 using Zamza.Server.Models.Exceptions;
-using TimeoutException = System.TimeoutException;
+using TimeoutException = Zamza.Server.Models.Exceptions.TimeoutException;
 
 namespace Zamza.Server.DataAccess.Common.QueryExecution;
 
