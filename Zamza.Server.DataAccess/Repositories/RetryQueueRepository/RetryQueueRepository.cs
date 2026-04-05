@@ -1,6 +1,7 @@
 using Dapper;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
+using Zamza.Server.DataAccess.Common.QueryExecution;
 using Zamza.Server.DataAccess.Repositories.CommonModels;
 using Zamza.Server.DataAccess.Repositories.RetryQueueRepository.Mapping;
 using Zamza.Server.DataAccess.Repositories.RetryQueueRepository.Models;
@@ -77,7 +78,7 @@ internal sealed class RetryQueueRepository : IRetryQueueRepository
             messages,
             cancellationToken);
         
-        await transaction.Connection.ExecuteAsync(command);
+        await transaction.Connection.ExecuteWithExceptionHandling(command);
     }
 
     public async Task Upsert(
@@ -101,6 +102,6 @@ internal sealed class RetryQueueRepository : IRetryQueueRepository
             messageDtos,
             cancellationToken);
         
-        await transaction.Connection.ExecuteAsync(command);
+        await transaction.Connection.ExecuteWithExceptionHandling(command);
     }
 }

@@ -1,5 +1,5 @@
-using Dapper;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
+using Zamza.Server.DataAccess.Common.QueryExecution;
 using Zamza.Server.DataAccess.Repositories.CommonModels;
 using Zamza.Server.DataAccess.Repositories.DLQRepository.Mapping;
 using Zamza.Server.DataAccess.Repositories.DLQRepository.SqlCommands;
@@ -26,7 +26,7 @@ internal sealed class DLQRepository : IDLQRepository
             messages,
             cancellationToken);
 
-        await transaction.Connection.ExecuteAsync(command);
+        await transaction.Connection.ExecuteWithExceptionHandling(command);
     }
 
     public async Task Upsert(
@@ -50,6 +50,6 @@ internal sealed class DLQRepository : IDLQRepository
             messageDtos,
             cancellationToken);
         
-        await transaction.Connection.ExecuteAsync(command);
+        await transaction.Connection.ExecuteWithExceptionHandling(command);
     } 
 }

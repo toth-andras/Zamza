@@ -4,7 +4,7 @@ using Dapper;
 using Npgsql;
 using NpgsqlTypes;
 
-namespace Zamza.Server.DataAccess.Common.DapperMapping;
+namespace Zamza.Server.DataAccess.Common.DapperConfiguration;
 
 internal sealed class JsonBTypeMapper<T> : SqlMapper.TypeHandler<T> where T : class
 {

@@ -9,8 +9,8 @@ internal static class LockPartitionsSqlCommand
     private const int TimeoutInSeconds = 10;
 
     private static string Sql =>
-    """
-        call zamza.lock_partitions(@ConsumerGroup, @Topics::text[], @Partitions::int[]);
+    $"""
+        call zamza.lock_partitions(@{nameof(Parameters.ConsumerGroup)}, @{nameof(Parameters.Topics)}::text[], @{nameof(Parameters.Partitions)}::int[]);
     """;
 
     public static CommandDefinition BuildCommandDefinition(

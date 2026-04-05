@@ -1,6 +1,6 @@
-using Dapper;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
+using Zamza.Server.DataAccess.Common.QueryExecution;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.Mapping;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.Models;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.SqlCommands;
@@ -12,8 +12,7 @@ internal sealed class PartitionOwnershipRepository : IPartitionOwnershipReposito
 {
     private readonly IDbConnectionsManager  _dbConnectionsManager;
 
-    public PartitionOwnershipRepository(
-        IDbConnectionsManager dbConnectionsManager)
+    public PartitionOwnershipRepository(IDbConnectionsManager dbConnectionsManager)
     {
         _dbConnectionsManager = dbConnectionsManager;
     }
@@ -34,8 +33,8 @@ internal sealed class PartitionOwnershipRepository : IPartitionOwnershipReposito
             consumerGroup,
             claimedPartitions,
             cancellationToken);
-        
-        await transaction.Connection.ExecuteAsync(command);
+
+        await transaction.Connection.ExecuteWithExceptionHandling(command);
     }
 
     public async Task<ConsumerGroupPartitionOwnershipSet> GetForConsumerGroup(
@@ -47,9 +46,9 @@ internal sealed class PartitionOwnershipRepository : IPartitionOwnershipReposito
             consumerGroup,
             transaction.Transaction,
             cancellationToken);
-        
+
         var partitionOwnerships = await transaction.Connection
-            .QueryAsync<PartitionOwnershipDto>(command);
+            .QueryWithExceptionHandling<PartitionOwnershipDto>(command);
         
         return new ConsumerGroupPartitionOwnershipSet(
             consumerGroup,
@@ -66,8 +65,9 @@ internal sealed class PartitionOwnershipRepository : IPartitionOwnershipReposito
             cancellationToken);
         
         await using var connection = await _dbConnectionsManager.CreateConnection(cancellationToken);
-        
-        var partitionOwnerships = await connection.QueryAsync<PartitionOwnershipDto>(command);
+
+        var partitionOwnerships = await connection
+            .QueryWithExceptionHandling<PartitionOwnershipDto>(command);
         
         return new ConsumerGroupPartitionOwnershipSet(
             consumerGroup,
@@ -111,7 +111,7 @@ internal sealed class PartitionOwnershipRepository : IPartitionOwnershipReposito
             timestampUtcValues,
             transaction.Transaction,
             cancellationToken);
-        
-        await transaction.Connection.ExecuteAsync(command);
+
+        await transaction.Connection.ExecuteWithExceptionHandling(command);
     }
 }
