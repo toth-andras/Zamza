@@ -30,7 +30,7 @@ internal static class UpsertDLQMessagesSqlCommand
             u.topic,
             u.partition,
             u.offset_value,
-            u.headers_json,
+            u.headers_json::jsonb,
             u.key,
             u.value,
             u.timestamp,

@@ -53,7 +53,7 @@ internal static class UpsertRetryQueueMessagesSqlCommand
             @{nameof(Parameters.MaxRetriesCounts)},
             @{nameof(Parameters.RetriesCounts)},
             @{nameof(Parameters.ProcessingDeadlinesUtc)},
-            @{nameof(Parameters.NextRetriesAfterMs)},
+            @{nameof(Parameters.NextRetriesAfterMs)}
         ) as u (topic, partition, offset_value, headers_json, key, value, timestamp, max_retries_count, retries_count, processing_deadline_utc, next_retry_after_ms)
         on conflict (consumer_group, topic, partition, offset_value)
             do update set

@@ -105,7 +105,7 @@ internal sealed class ClaimPartitionOwnershipService : IClaimPartitionOwnershipS
             .Select(partition => (partition.Topic, partition.Partition));
         
         _logger.LogInformation(
-            "Provided ownership for consumer {ConsumerId} in {ConsumerGroup} consumer group over partitions: {ProvidedPartitions}",
+            "Provided ownership for consumer \'{ConsumerId}\' in consumer group \'{ConsumerGroup}\' over partitions: {ProvidedPartitions}",
             claims.ConsumerId,
             claims.ConsumerGroup,
             topicPartitionPairs);

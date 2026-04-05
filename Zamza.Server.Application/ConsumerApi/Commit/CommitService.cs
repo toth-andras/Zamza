@@ -203,7 +203,7 @@ internal sealed class CommitService : ICommitService
         {
             var partitionNotRegistered = consumerGroupPartitionOwnerships.IsPartitionRegistered(
                 statedPartition.Topic,
-                statedPartition.Partition);
+                statedPartition.Partition) is false;
             
             var currentPartitionOwnerEpoch = consumerGroupPartitionOwnerships.GetOwnerEpochForPartition(
                 statedPartition.Topic,
