@@ -76,4 +76,14 @@ public sealed class ConsumerApiGrpcService : ConsumerApiV1.ConsumerApiV1Base
         
         return new LeaveResponse();
     }
+
+    public override Task<PingResponse> Ping(
+        PingRequest request,
+        ServerCallContext context)
+    {
+        // Doing nothing, as this request is only used to determine
+        // the availability of the service
+        
+        return Task.FromResult(new PingResponse());
+    }
 }

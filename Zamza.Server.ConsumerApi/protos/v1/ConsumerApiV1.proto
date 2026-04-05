@@ -10,6 +10,7 @@ service ConsumerApiV1 {
   rpc Fetch(FetchRequest) returns (FetchResponse);
   rpc Commit(CommitRequest) returns (CommitResponse);
   rpc Leave(LeaveRequest) returns (LeaveResponse);
+  rpc Ping(PingRequest) returns (PingResponse);
 }
 
 // Common models
@@ -127,3 +128,6 @@ message LeaveRequest {
   string ConsumerGroup = 2;
 }
 message LeaveResponse {}
+
+message PingRequest {}
+message PingResponse {}
