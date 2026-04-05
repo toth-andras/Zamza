@@ -114,4 +114,20 @@ internal sealed class PartitionOwnershipRepository : IPartitionOwnershipReposito
 
         await transaction.Connection.ExecuteWithExceptionHandling(command);
     }
+
+    public async Task DeleteConsumerOwnerships(
+        string consumerId,
+        string consumerGroup,
+        DateTimeOffset timestampUtc,
+        CancellationToken cancellationToken)
+    {
+        var command = DeleteConsumerOwnershipsSqlCommand.BuildCommandDefinition(
+            consumerId,
+            consumerGroup,
+            timestampUtc,
+            cancellationToken);
+        
+        await using var connection = await _dbConnectionsManager.CreateConnection(cancellationToken);
+        await connection.ExecuteWithExceptionHandling(command);
+    }
 }

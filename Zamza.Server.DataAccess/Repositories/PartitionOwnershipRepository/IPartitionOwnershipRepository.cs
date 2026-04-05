@@ -25,4 +25,10 @@ public interface IPartitionOwnershipRepository
         IDbTransactionFrame transaction,
         ConsumerGroupPartitionOwnershipSet partitionOwnerships,
         CancellationToken cancellationToken);
+    
+    Task DeleteConsumerOwnerships(
+        string consumerId,
+        string consumerGroup,
+        DateTimeOffset timestampUtc,
+        CancellationToken cancellationToken);
 }

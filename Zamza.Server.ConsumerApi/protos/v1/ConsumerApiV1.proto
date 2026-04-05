@@ -9,6 +9,7 @@ service ConsumerApiV1 {
   rpc ClaimPartitionOwnership(ClaimPartitionOwnershipRequest) returns (ClaimPartitionOwnershipResponse);
   rpc Fetch(FetchRequest) returns (FetchResponse);
   rpc Commit(CommitRequest) returns (CommitResponse);
+  rpc Leave(LeaveRequest) returns (LeaveResponse);
 }
 
 // Common models
@@ -120,3 +121,9 @@ message CommitResponse {
     int32 partition = 2;
   }
 }
+
+message LeaveRequest {
+  string ConsumerId = 1;
+  string ConsumerGroup = 2;
+}
+message LeaveResponse {}

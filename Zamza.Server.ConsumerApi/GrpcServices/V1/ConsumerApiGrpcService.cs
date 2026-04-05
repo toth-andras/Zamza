@@ -3,6 +3,7 @@ using Zamza.ConsumerApi.V1;
 using Zamza.Server.Application.ConsumerApi.ClaimPartitionOwnership;
 using Zamza.Server.Application.ConsumerApi.Commit;
 using Zamza.Server.Application.ConsumerApi.Fetch;
+using Zamza.Server.Application.ConsumerApi.Leave;
 using Zamza.Server.ConsumerApi.GrpcServices.V1.Mapping;
 using Zamza.Server.ConsumerApi.Utils.DateTimeProvider;
 
@@ -13,17 +14,20 @@ public sealed class ConsumerApiGrpcService : ConsumerApiV1.ConsumerApiV1Base
     private readonly IClaimPartitionOwnershipService _claimPartitionOwnershipService;
     private readonly IFetchService _fetchService;
     private readonly ICommitService _commitService;
+    private readonly ILeaveService _leaveService;
     private readonly IDateTimeProvider _dateTimeProvider;
 
     public ConsumerApiGrpcService(
         IClaimPartitionOwnershipService claimPartitionOwnershipService,
         IFetchService fetchService,
         ICommitService commitService,
+        ILeaveService leaveService,
         IDateTimeProvider dateTimeProvider)
     {
         _claimPartitionOwnershipService = claimPartitionOwnershipService;
         _fetchService = fetchService;
         _commitService = commitService;
+        _leaveService = leaveService;
         _dateTimeProvider = dateTimeProvider;
     }
 
@@ -60,5 +64,16 @@ public sealed class ConsumerApiGrpcService : ConsumerApiV1.ConsumerApiV1Base
         var responseModel = await _commitService.Commit(requestModel, context.CancellationToken);
 
         return responseModel.ToGrpc();
+    }
+
+    public override async Task<LeaveResponse> Leave(
+        LeaveRequest request,
+        ServerCallContext context)
+    {
+        var requestModel = request.ToModel(_dateTimeProvider.GetUtcNow());
+        
+        await _leaveService.Leave(requestModel, context.CancellationToken);
+        
+        return new LeaveResponse();
     }
 }
