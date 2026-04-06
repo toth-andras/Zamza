@@ -156,11 +156,11 @@ internal sealed class CommitService : ICommitService
         CancellationToken cancellationToken)
     {
         var messagesToDelete = messages.ProcessedMessages
-            .Select(message => new MessageToDeleteDto(message.Topic, message.Partition, message.Offset))
+            .Select(message => new MessageToDelete(message.Topic, message.Partition, message.Offset))
             .Concat
             (
                 messages.FailedMessages
-                    .Select(message => new MessageToDeleteDto(message.Topic, message.Partition, message.Offset))
+                    .Select(message => new MessageToDelete(message.Topic, message.Partition, message.Offset))
             )
             .ToList();
         
@@ -178,11 +178,11 @@ internal sealed class CommitService : ICommitService
         CancellationToken cancellationToken)
     {
         var messagesToDelete = messages.ProcessedMessages
-            .Select(message => new MessageToDeleteDto(message.Topic, message.Partition, message.Offset))
+            .Select(message => new MessageToDelete(message.Topic, message.Partition, message.Offset))
             .Concat
             (
                 messages.RetryableMessages
-                    .Select(message => new MessageToDeleteDto(message.Topic, message.Partition, message.Offset))
+                    .Select(message => new MessageToDelete(message.Topic, message.Partition, message.Offset))
             )
             .ToList();
         

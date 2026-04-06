@@ -4,7 +4,7 @@ using Zamza.Server.ConsumerApi.GrpcServices.V1;
 
 namespace Zamza.Server.ConsumerApi;
 
-public static class EndpointRouteBuilderExtensions
+public static class ConsumerApiEndpointRouteBuilderExtensions
 {
     public static IEndpointRouteBuilder AddConsumerApiEndpoints(this IEndpointRouteBuilder applicationBuilder)
     {

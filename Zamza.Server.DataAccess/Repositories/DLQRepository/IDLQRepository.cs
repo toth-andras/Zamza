@@ -8,8 +8,13 @@ public interface IDLQRepository
 {
     Task Delete(
         IDbTransactionFrame transaction,
+        MessageToDelete message,
+        CancellationToken cancellationToken);
+    
+    Task Delete(
+        IDbTransactionFrame transaction,
         string consumerGroup,
-        IReadOnlyCollection<MessageToDeleteDto> messages,
+        IReadOnlyCollection<MessageToDelete> messages,
         CancellationToken cancellationToken);
 
     Task Upsert(

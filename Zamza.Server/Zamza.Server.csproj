@@ -6,4 +6,8 @@
       <ProjectReference Include="..\Zamza.Server.DataAccess\Zamza.Server.DataAccess.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    </ItemGroup>
+
 </Project>

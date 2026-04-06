@@ -2,15 +2,15 @@ using System.Data.Common;
 using Dapper;
 using Zamza.Server.DataAccess.Repositories.CommonModels;
 
-namespace Zamza.Server.DataAccess.Repositories.RetryQueueRepository.SqlCommands;
+namespace Zamza.Server.DataAccess.Repositories.DLQRepository.SqlCommands;
 
-internal static class DeleteRetryQueueMessagesSqlCommand
+internal static class DeleteDLQMessagesForConsumerGroupSqlCommand
 {
     private const int TimeoutInSeconds = 10;
     
     private static string Sql => 
     $"""
-        delete from zamza.retry_queue stored_rows
+        delete from zamza.dlq stored_rows
         using unnest
         (
             @{nameof(Parameters.Topics)},
@@ -22,12 +22,12 @@ internal static class DeleteRetryQueueMessagesSqlCommand
             stored_rows.topic = rows_to_delete.topic and
             stored_rows.partition = rows_to_delete.partition and
             stored_rows.offset_value = rows_to_delete.offset_value;
-    """;
-
+     """;
+    
     public static CommandDefinition BuildCommandDefinition(
         DbTransaction  transaction,
         string consumerGroup,
-        IReadOnlyCollection<MessageToDeleteDto> messages,
+        IReadOnlyCollection<MessageToDelete> messages,
         CancellationToken cancellationToken)
     {
         var parameters = FormParameters(consumerGroup, messages);
@@ -42,7 +42,7 @@ internal static class DeleteRetryQueueMessagesSqlCommand
 
     private static Parameters FormParameters(
         string consumerGroup,
-        IReadOnlyCollection<MessageToDeleteDto> messages)
+        IReadOnlyCollection<MessageToDelete> messages)
     {
         var topics = new string[messages.Count];
         var partitions = new int[messages.Count];

@@ -63,8 +63,23 @@ internal sealed class RetryQueueRepository : IRetryQueueRepository
 
     public async Task Delete(
         IDbTransactionFrame transaction,
+        MessageToDelete message,
+        CancellationToken cancellationToken)
+    {
+        var command = DeleteRetryQueueMessageSqlCommand.BuildCommandDefinition(
+            transaction.Transaction,
+            message.Topic,
+            message.Partition,
+            message.Offset,
+            cancellationToken);
+
+        await transaction.Connection.ExecuteWithExceptionHandling(command);
+    }
+
+    public async Task Delete(
+        IDbTransactionFrame transaction,
         string consumerGroup,
-        IReadOnlyCollection<MessageToDeleteDto> messages,
+        IReadOnlyCollection<MessageToDelete> messages,
         CancellationToken cancellationToken)
     {
         if (messages.Count == 0)
@@ -72,7 +87,7 @@ internal sealed class RetryQueueRepository : IRetryQueueRepository
             return;
         }
         
-        var command = DeleteRetryQueueMessagesSqlCommand.BuildCommandDefinition(
+        var command = DeleteRetryQueueMessagesForConsumerGroupSqlCommand.BuildCommandDefinition(
             transaction.Transaction,
             consumerGroup,
             messages,
