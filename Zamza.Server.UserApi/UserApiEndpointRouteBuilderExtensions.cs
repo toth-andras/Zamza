@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Routing;
+
 namespace Zamza.Server.UserApi;
 
 public static class UserApiEndpointRouteBuilderExtensions

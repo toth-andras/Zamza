@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+
 namespace Zamza.Server.UserApi;
 
 public static class ServiceCollectionExtensions
