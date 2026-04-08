@@ -16,4 +16,8 @@
       <ProjectReference Include="..\Zamza.Server.Application\Zamza.Server.Application.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Controllers\V1\" />
+    </ItemGroup>
+
 </Project>

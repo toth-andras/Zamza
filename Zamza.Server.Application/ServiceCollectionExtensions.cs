@@ -3,6 +3,7 @@ using Zamza.Server.Application.ConsumerApi.ClaimPartitionOwnership;
 using Zamza.Server.Application.ConsumerApi.Commit;
 using Zamza.Server.Application.ConsumerApi.Fetch;
 using Zamza.Server.Application.ConsumerApi.Leave;
+using Zamza.Server.Application.UserApi.DLQ;
 using Zamza.Server.Application.UserApi.Storage;
 
 namespace Zamza.Server.Application;
@@ -30,6 +31,7 @@ public static class ServiceCollectionExtensions
     private static IServiceCollection AddUserApi(this IServiceCollection services)
     {
         services.AddScoped<IStorageService, StorageService>();
+        services.AddScoped<IDLQService, DLQService>();
         
         return services;
     }

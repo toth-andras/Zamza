@@ -1,14 +1,24 @@
+using Zamza.Server.DataAccess.Common.ConnectionsManagement;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
 using Zamza.Server.DataAccess.Common.QueryExecution;
 using Zamza.Server.DataAccess.Repositories.CommonModels;
 using Zamza.Server.DataAccess.Repositories.DLQRepository.Mapping;
+using Zamza.Server.DataAccess.Repositories.DLQRepository.Models;
 using Zamza.Server.DataAccess.Repositories.DLQRepository.SqlCommands;
 using Zamza.Server.Models.ConsumerApi.Commit;
+using Zamza.Server.Models.UserApi;
 
 namespace Zamza.Server.DataAccess.Repositories.DLQRepository;
 
 internal sealed class DLQRepository : IDLQRepository
 {
+    private readonly IDbConnectionsManager _dbConnectionsManager;
+
+    public DLQRepository(IDbConnectionsManager dbConnectionsManager)
+    {
+        _dbConnectionsManager = dbConnectionsManager;
+    }
+
     public async Task Delete(
         IDbTransactionFrame transaction,
         MessageToDelete message,
@@ -66,5 +76,24 @@ internal sealed class DLQRepository : IDLQRepository
             cancellationToken);
         
         await transaction.Connection.ExecuteWithExceptionHandling(command);
-    } 
+    }
+
+    public async Task<List<UserApiDLQMessage>> Get(
+        long startId,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        var command = GetDLQMessagesForUserApiSqlCommand.BuildCommandDefinition(
+            startId,
+            limit,
+            cancellationToken);
+
+        await using var connection = await _dbConnectionsManager.CreateConnection(cancellationToken);
+        
+        var messagesEnumerable = await connection.QueryWithExceptionHandling<UserApiDLQMessageDto>(command);
+
+        return messagesEnumerable
+            .Select(dto => dto.ToModel())
+            .ToList();
+    }
 }
