@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Zamza.Server.Application.UserApi.Storage;
-using Zamza.Server.UserApi.Controllers.Storage.Models;
+using Zamza.Server.UserApi.Controllers.V1.Storage.Models;
 
-namespace Zamza.Server.UserApi.Controllers.Storage;
+namespace Zamza.Server.UserApi.Controllers.V1.Storage;
 
 [ApiController]
 [Route("Storage")]

@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Zamza.Server.UserApi.Controllers.Storage.Models;
+namespace Zamza.Server.UserApi.Controllers.V1.Storage.Models;
 
 public sealed class DeleteMessageRequest
 {
