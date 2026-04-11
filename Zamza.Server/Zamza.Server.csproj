@@ -7,8 +7,4 @@
       <ProjectReference Include="..\Zamza.Server.UserApi\Zamza.Server.UserApi.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="UserApi\" />
-    </ItemGroup>
-
 </Project>
