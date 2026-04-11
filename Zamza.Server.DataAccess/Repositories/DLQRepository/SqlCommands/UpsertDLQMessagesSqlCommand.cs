@@ -22,7 +22,7 @@ internal static class UpsertDLQMessagesSqlCommand
             value,
             timestamp,
             retries_count,
-            became_poisoned_at_utc,
+            failed_at_utc,
             version
         )
         select
@@ -35,7 +35,7 @@ internal static class UpsertDLQMessagesSqlCommand
             u.value,
             u.timestamp,
             u.retries_count,
-            u.became_poisoned_at_utc,
+            u.failed_at_utc,
             {RecordVersion}
         from unnest
         (
@@ -48,11 +48,11 @@ internal static class UpsertDLQMessagesSqlCommand
              @{nameof(Parameters.Timestamps)},
              @{nameof(Parameters.RetriesCounts)},
              @{nameof(Parameters.BecamePoisonedAtUtcs)}
-        ) as u(topic, partition, offset_value, headers_json, key, value, timestamp, retries_count, became_poisoned_at_utc)
+        ) as u(topic, partition, offset_value, headers_json, key, value, timestamp, retries_count, failed_at_utc)
         on conflict (consumer_group, topic, partition, offset_value)
         do update set
             retries_count = excluded.retries_count,
-            became_poisoned_at_utc = excluded.timestamp;
+            failed_at_utc = excluded.timestamp;
     """;
 
     public static CommandDefinition BuildCommandDefinition(

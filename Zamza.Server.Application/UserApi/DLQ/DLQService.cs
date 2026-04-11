@@ -25,7 +25,9 @@ internal sealed class DLQService : IDLQService
             request.Limit,
             cancellationToken);
 
-        var newCursor = messages.Max(message => message.Id);
+        var newCursor = messages.Count > 0 
+            ? messages.Max(message => message.Id)
+            : startId;
         
         return new GetDLQMessagesResponse(
             messages,

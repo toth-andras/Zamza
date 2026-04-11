@@ -10,17 +10,17 @@ internal static class GetDLQMessagesForUserApiSqlCommand
     private static string Sql =>
     $"""
         select
-           id                       as {nameof(UserApiDLQMessageDto.Id)},
-           consumer_group           as {nameof(UserApiDLQMessageDto.ConsumerGroup)},
-           topic                    as {nameof(UserApiDLQMessageDto.Topic)},
-           partition                as {nameof(UserApiDLQMessageDto.Partition)},
-           offset_value             as {nameof(UserApiDLQMessageDto.Offset)},
-           headers                  as {nameof(UserApiDLQMessageDto.HeadersJson)},
-           key                      as {nameof(UserApiDLQMessageDto.Key)},
-           value                    as {nameof(UserApiDLQMessageDto.Value)},
-           timestamp                as {nameof(UserApiDLQMessageDto.Timestamp)},
-           retries_count            as {nameof(UserApiDLQMessageDto.RetriesCount)},
-           became_poisoned_at_utc   as {nameof(UserApiDLQMessageDto.SavedToDLQAtUTC)}
+           id               as {nameof(UserApiDLQMessageDto.Id)},
+           consumer_group   as {nameof(UserApiDLQMessageDto.ConsumerGroup)},
+           topic            as {nameof(UserApiDLQMessageDto.Topic)},
+           partition        as {nameof(UserApiDLQMessageDto.Partition)},
+           offset_value     as {nameof(UserApiDLQMessageDto.Offset)},
+           headers          as {nameof(UserApiDLQMessageDto.HeadersJson)},
+           key              as {nameof(UserApiDLQMessageDto.Key)},
+           value            as {nameof(UserApiDLQMessageDto.Value)},
+           timestamp        as {nameof(UserApiDLQMessageDto.Timestamp)},
+           retries_count    as {nameof(UserApiDLQMessageDto.RetriesCount)},
+           failed_at_utc    as {nameof(UserApiDLQMessageDto.SavedToDLQAtUTC)}
         from zamza.dlq
         where id > @{nameof(Parameters.StartId)}
         order by id
