@@ -13,6 +13,11 @@ public interface IDLQRepository
         CancellationToken cancellationToken);
     
     Task Delete(
+        string consumerGroup,
+        IReadOnlyCollection<MessageToDelete> messagesToDelete,
+        CancellationToken cancellationToken);
+    
+    Task Delete(
         IDbTransactionFrame transaction,
         string consumerGroup,
         IReadOnlyCollection<MessageToDelete> messages,

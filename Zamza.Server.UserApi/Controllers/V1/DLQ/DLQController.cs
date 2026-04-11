@@ -40,4 +40,19 @@ public sealed class DLQController : ControllerBase
 
         return Ok(response.ToRest());
     }
+
+    /// <summary>
+    /// Deletes the messages stored in DLQ by any member of given consumer group.
+    /// </summary>
+    [HttpDelete("delete-messages")]
+    public async Task<IActionResult> Delete(
+        [FromBody] DeleteDLQMessagesRestRequest request,
+        CancellationToken cancellationToken)
+    {
+        var requestModel =  request.ToModel();
+        
+        await _dlqService.DeleteMessages(requestModel, cancellationToken);
+        
+        return Ok();
+    }
 }

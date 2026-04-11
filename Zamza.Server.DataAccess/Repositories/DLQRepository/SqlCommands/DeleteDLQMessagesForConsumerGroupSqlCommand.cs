@@ -25,7 +25,7 @@ internal static class DeleteDLQMessagesForConsumerGroupSqlCommand
      """;
     
     public static CommandDefinition BuildCommandDefinition(
-        DbTransaction  transaction,
+        DbTransaction? transaction,
         string consumerGroup,
         IReadOnlyCollection<MessageToDelete> messages,
         CancellationToken cancellationToken)

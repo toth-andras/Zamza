@@ -7,4 +7,8 @@ public interface IDLQService
     Task<GetDLQMessagesResponse> GetMessages(
         GetDLQMessagesRequest request,
         CancellationToken cancellationToken);
+
+    Task DeleteMessages(
+        DeleteDLQMessagesRequest request,
+        CancellationToken cancellationToken);
 }

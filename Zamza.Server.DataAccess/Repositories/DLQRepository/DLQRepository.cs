@@ -33,7 +33,27 @@ internal sealed class DLQRepository : IDLQRepository
 
         await transaction.Connection.ExecuteWithExceptionHandling(command);
     }
-    
+
+    public async Task Delete(
+        string consumerGroup,
+        IReadOnlyCollection<MessageToDelete> messagesToDelete,
+        CancellationToken cancellationToken)
+    {
+        if (messagesToDelete.Count == 0)
+        {
+            return;
+        }
+
+        var command = DeleteDLQMessagesForConsumerGroupSqlCommand.BuildCommandDefinition(
+            transaction: null,
+            consumerGroup,
+            messagesToDelete,
+            cancellationToken);
+
+        await using var connection = await _dbConnectionsManager.CreateConnection(cancellationToken);
+        await connection.ExecuteWithExceptionHandling(command);
+    }
+
     public async Task Delete(
         IDbTransactionFrame transaction,
         string consumerGroup,
