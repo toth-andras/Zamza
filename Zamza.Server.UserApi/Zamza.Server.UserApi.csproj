@@ -10,6 +10,7 @@
       <PackageReference Include="Microsoft.AspNetCore" />
       <PackageReference Include="Microsoft.AspNetCore.Mvc" />
       <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+      <PackageReference Include="Swashbuckle.AspNetCore" />
     </ItemGroup>
 
     <ItemGroup>

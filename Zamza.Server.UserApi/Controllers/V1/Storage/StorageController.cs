@@ -5,7 +5,7 @@ using Zamza.Server.UserApi.Controllers.V1.Storage.Models;
 namespace Zamza.Server.UserApi.Controllers.V1.Storage;
 
 [ApiController]
-[Route("Storage")]
+[Route("Storage/v1")]
 public sealed class StorageController : ControllerBase
 {
     private readonly IStorageService _storageService;

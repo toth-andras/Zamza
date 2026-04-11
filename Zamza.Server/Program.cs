@@ -12,8 +12,6 @@ builder.Services.AddUserApiLayer();
 
 var app = builder.Build();
 
-app.UseHttpsRedirection();
-
 app.AddConsumerApiEndpoints();
 app.AddUserApiEndpoints();
 app.Services.RunMigrations();

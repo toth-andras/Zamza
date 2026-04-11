@@ -7,7 +7,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddUserApiLayer(this IServiceCollection services)
     {
         services.AddEndpointsApiExplorer();
-        services.AddOpenApi();
+        services.AddSwaggerGen();
         services.AddControllers();
         
         return services;
