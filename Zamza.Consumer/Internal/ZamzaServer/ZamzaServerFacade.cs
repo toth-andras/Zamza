@@ -6,6 +6,7 @@ using Zamza.Consumer.Internal.ZamzaServer.Exceptions;
 using Zamza.Consumer.Internal.ZamzaServer.Mapping;
 using Zamza.Consumer.Internal.ZamzaServer.Models;
 using Zamza.ConsumerApi.V1;
+using ClaimPartitionOwnershipRequest = Zamza.Consumer.Internal.ZamzaServer.Models.ClaimPartitionOwnershipRequest;
 using FetchRequest = Zamza.Consumer.Internal.ZamzaServer.Models.FetchRequest;
 using PingRequest = Zamza.Consumer.Internal.ZamzaServer.Models.PingRequest;
 
@@ -27,6 +28,60 @@ internal sealed class ZamzaServerFacade<TKey, TValue> : IZamzaServerFacade<TKey,
         _grpcClient = new ConsumerApiV1.ConsumerApiV1Client(_grpcChannel);
         _dateTimeProvider = dateTimeProvider;
         _logger = logger;
+    }
+
+    public async Task<ClaimPartitionOwnershipResult> ClaimPartitionOwnership(
+        ClaimPartitionOwnershipRequest request,
+        CancellationToken cancellationToken)
+    {
+        var timeout = TimeSpan.FromSeconds(3);
+        
+        using var scope = _logger.BeginScope(
+            "ConsumerGroup: {ConsumerGroup}, ConsumerId: {ConsumerId}",
+            request.ConsumerGroup, request.ConsumerId);
+
+        Log.ClaimPartitionOwnership.Request(_logger, request);
+        
+        ClaimPartitionOwnershipResponse grpcResponse;
+        try
+        {
+            grpcResponse = await _grpcClient.ClaimPartitionOwnershipAsync(
+                request.ToGrpc(),
+                deadline: _dateTimeProvider.UtcNow.AddSeconds(timeout.TotalSeconds),
+                cancellationToken: cancellationToken);
+        }
+        catch (RpcException exception) when (exception.StatusCode == StatusCode.Unavailable)
+        {
+            _logger.LogError("Zamza server is not available");
+            throw new ZamzaException(ZamzaErrorCode.ServerUnavailable);
+        }
+        catch (RpcException exception) when (exception.StatusCode == StatusCode.InvalidArgument)
+        {
+            _logger.LogError(
+                exception, 
+                "The fetch request to Zamza server did not match the protocol: {ErrorMessage}",
+                exception.Message);
+            
+            throw new ZamzaException(ZamzaErrorCode.InternalError);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception, 
+                "An unexpected exception occured during ClaimPartitionOwnership request to Zamza server");
+            throw new ZamzaException(ZamzaErrorCode.InternalError);
+        }
+
+        var areClaimsRelevant = grpcResponse.ResultCase is ClaimPartitionOwnershipResponse.ResultOneofCase.Ok;
+
+        var result = new  ClaimPartitionOwnershipResult(
+            IsSuccessful: areClaimsRelevant,
+            grpcResponse.CurrentOwnershipsForConsumerGroup.PartitionOwnerships
+                .Select(ownership => ownership.ToModel())
+                .ToList());
+        
+        Log.ClaimPartitionOwnership.Result(_logger, result);
+        return result;
     }
 
     public async Task<FetchResult<TKey, TValue>> Fetch(
@@ -159,6 +214,35 @@ internal sealed class ZamzaServerFacade<TKey, TValue> : IZamzaServerFacade<TKey,
                     .ToList();
                 
                 logger.LogDebug("Successful fetch. Messages: {Messages}", fetchedMessages);
+            }
+        }
+
+        public static class ClaimPartitionOwnership
+        {
+            public static void Request(
+                ILogger<ZamzaServerFacade<TKey, TValue>> logger,
+                ClaimPartitionOwnershipRequest request)
+            {
+                if (logger.IsEnabled(LogLevel.Debug) is false)
+                    return;
+
+                var claimedPartition = request.ClaimedPartitions
+                    .Select(partition => (Topic: partition.Topic, Partition: partition.Partition))
+                    .ToList();
+                
+                logger.LogDebug(
+                    "ClaimPartitionOwnership request. Partitions: {Partitions}",
+                    claimedPartition);
+            }
+
+            public static void Result(
+                ILogger<ZamzaServerFacade<TKey, TValue>> logger,
+                ClaimPartitionOwnershipResult result)
+            {
+                if (logger.IsEnabled(LogLevel.Debug) is false)
+                    return;
+
+                logger.LogDebug(result.IsSuccessful ? "Claim successful" : "Claim failed");
             }
         }
     }
