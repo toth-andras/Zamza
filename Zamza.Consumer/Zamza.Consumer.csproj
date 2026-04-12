@@ -11,11 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Protobuf Include="..\Zamza.Server.ConsumerApi\protos\*\*.proto" GrpcServices="Client" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Internal\" />
+        <Protobuf Include="..\Zamza.Server.ConsumerApi\protos\*\*.proto" GrpcServices="Client" Access="Internal" />
     </ItemGroup>
 
 </Project>
