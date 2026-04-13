@@ -8,6 +8,7 @@ using Zamza.Consumer.Internal.ZamzaServer.Models;
 using Zamza.ConsumerApi.V1;
 using ClaimPartitionOwnershipRequest = Zamza.Consumer.Internal.ZamzaServer.Models.ClaimPartitionOwnershipRequest;
 using FetchRequest = Zamza.Consumer.Internal.ZamzaServer.Models.FetchRequest;
+using LeaveRequest = Zamza.Consumer.Internal.ZamzaServer.Models.LeaveRequest;
 using PingRequest = Zamza.Consumer.Internal.ZamzaServer.Models.PingRequest;
 
 namespace Zamza.Consumer.Internal.ZamzaServer;
@@ -45,10 +46,12 @@ internal sealed class ZamzaServerFacade<TKey, TValue> : IZamzaServerFacade<TKey,
         ClaimPartitionOwnershipResponse grpcResponse;
         try
         {
-            grpcResponse = await _grpcClient.ClaimPartitionOwnershipAsync(
-                request.ToGrpc(),
-                deadline: _dateTimeProvider.UtcNow.AddSeconds(timeout.TotalSeconds),
-                cancellationToken: cancellationToken);
+            grpcResponse = await _grpcClient
+                .ClaimPartitionOwnershipAsync(
+                    request.ToGrpc(), 
+                    deadline: _dateTimeProvider.UtcNow.AddSeconds(timeout.TotalSeconds), 
+                    cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
         }
         catch (RpcException exception) when (exception.StatusCode == StatusCode.Unavailable)
         {
@@ -99,10 +102,12 @@ internal sealed class ZamzaServerFacade<TKey, TValue> : IZamzaServerFacade<TKey,
         {
             Log.Fetch.Request(_logger, request);
             
-            grpcResponse = await _grpcClient.FetchAsync(
-                request.ToGrpc(),
-                deadline: _dateTimeProvider.UtcNow.AddSeconds(fetchTimeout.TotalSeconds),
-                cancellationToken: cancellationToken);
+            grpcResponse = await _grpcClient
+                .FetchAsync(
+                    request.ToGrpc(), 
+                    deadline: _dateTimeProvider.UtcNow.AddSeconds(fetchTimeout.TotalSeconds), 
+                    cancellationToken: cancellationToken)
+                .ConfigureAwait(false);;
         }
         catch (RpcException exception) when (exception.StatusCode == StatusCode.Unavailable)
         {
@@ -122,7 +127,7 @@ internal sealed class ZamzaServerFacade<TKey, TValue> : IZamzaServerFacade<TKey,
             _logger.LogError(
                 exception, 
                 "An unexpected exception occured during fetch request to Zamza server");
-            throw new ZamzaException(ZamzaErrorCode.InternalError);
+            throw new ZamzaException(ZamzaErrorCode.InternalError, innerException: exception);
         }
 
         var consumerGroupPartitionOwnerships = grpcResponse.CurrentOwnershipsForConsumerGroup.PartitionOwnerships
@@ -163,10 +168,12 @@ internal sealed class ZamzaServerFacade<TKey, TValue> : IZamzaServerFacade<TKey,
         var timeout = TimeSpan.FromSeconds(1);
         try
         {
-            await _grpcClient.PingAsync(
-                new ConsumerApi.V1.PingRequest(),
-                deadline: _dateTimeProvider.UtcNow.AddSeconds(timeout.TotalSeconds),
-                cancellationToken: cancellationToken);
+            await _grpcClient
+                .PingAsync(
+                    new ConsumerApi.V1.PingRequest(), 
+                    deadline: _dateTimeProvider.UtcNow.AddSeconds(timeout.TotalSeconds), 
+                    cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
             
             _logger.LogDebug("Successful ping request to Zamza server");
 
@@ -176,6 +183,39 @@ internal sealed class ZamzaServerFacade<TKey, TValue> : IZamzaServerFacade<TKey,
         {
             _logger.LogDebug(exception, "Ping request to Zamza server resulted with exception");
             return false;
+        }
+    }
+
+    public async Task Leave(
+        LeaveRequest request,
+        CancellationToken cancellationToken)
+    {
+        using var scope = _logger.BeginScope(
+            "ConsumerGroup: {ConsumerGroup}, ConsumerId: {ConsumerId}",
+            request.ConsumerGroup, request.ConsumerId);
+        
+        try
+        {
+            await _grpcClient
+                .LeaveAsync(
+                    request.ToGrpc(),
+                    cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (RpcException exception) when (exception.StatusCode == StatusCode.Unavailable)
+        {
+            _logger.LogError("Zamza server is not available");
+            throw new ZamzaException(ZamzaErrorCode.ServerUnavailable);
+        }
+        catch (RpcException exception) when (exception.StatusCode == StatusCode.InvalidArgument)
+        {
+            _logger.LogError(exception, "The leave request to Zamza server did not match the protocol");
+            throw new ZamzaException(ZamzaErrorCode.InternalError);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "An unexpected exception occured during leave request");
+            throw new ZamzaException(ZamzaErrorCode.InternalError, innerException: exception);
         }
     }
 

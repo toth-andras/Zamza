@@ -15,4 +15,8 @@ internal interface IZamzaServerFacade<TKey, TValue>
     Task<bool> Ping(
         PingRequest request,
         CancellationToken cancellationToken);
+    
+    Task Leave(
+        LeaveRequest request,
+        CancellationToken cancellationToken);
 }
