@@ -154,7 +154,44 @@ internal sealed class ZamzaServerFacade<TKey, TValue> : IZamzaServerFacade<TKey,
         // Should not get here
         throw new NotSupportedException("The version of protocol used by Zamza server is not supported");
     }
-    
+
+    public async Task<CommitResult> Commit(
+        CommitRequest<TKey, TValue> request,
+        CancellationToken cancellationToken)
+    {
+        using var scope = _logger.BeginScope(
+            "ConsumerGroup: {ConsumerGroup}, ConsumerId: {ConsumerId}",
+            request.ConsumerGroup, request.ConsumerId);
+        
+        Log.Commit.Request(_logger, request);
+        
+        var commitTimeout = TimeSpan.FromSeconds(3);
+        try
+        {
+            var grpcResult= await _grpcClient.CommitAsync(
+                request.ToGrpc(),
+                deadline: _dateTimeProvider.UtcNow.AddSeconds(commitTimeout.TotalSeconds),
+                cancellationToken: cancellationToken);
+
+            return grpcResult.ToModel();
+        }
+        catch (RpcException exception) when (exception.StatusCode is StatusCode.Unavailable)
+        {
+            _logger.LogError("Zamza server is not available");
+            throw new ZamzaException(ZamzaErrorCode.ServerUnavailable);
+        }
+        catch (RpcException exception) when (exception.StatusCode == StatusCode.InvalidArgument)
+        {
+            _logger.LogError(exception, "Commit request did not match the protocol");
+            throw new ZamzaException(ZamzaErrorCode.InternalError, innerException: exception);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "An unexpected exception occured during Commit");
+            throw new ZamzaException(ZamzaErrorCode.InternalError);
+        }
+    }
+
     public async Task<bool> Ping(
         PingRequest request,
         CancellationToken cancellationToken)
@@ -190,6 +227,8 @@ internal sealed class ZamzaServerFacade<TKey, TValue> : IZamzaServerFacade<TKey,
         LeaveRequest request,
         CancellationToken cancellationToken)
     {
+        var leaveTimeout = TimeSpan.FromSeconds(1);
+        
         using var scope = _logger.BeginScope(
             "ConsumerGroup: {ConsumerGroup}, ConsumerId: {ConsumerId}",
             request.ConsumerGroup, request.ConsumerId);
@@ -199,6 +238,7 @@ internal sealed class ZamzaServerFacade<TKey, TValue> : IZamzaServerFacade<TKey,
             await _grpcClient
                 .LeaveAsync(
                     request.ToGrpc(),
+                    deadline: _dateTimeProvider.UtcNow.AddSeconds(leaveTimeout.TotalSeconds),
                     cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -283,6 +323,29 @@ internal sealed class ZamzaServerFacade<TKey, TValue> : IZamzaServerFacade<TKey,
                     return;
 
                 logger.LogDebug(result.IsSuccessful ? "Claim successful" : "Claim failed");
+            }
+        }
+
+        public static class Commit
+        {
+            public static void Request(ILogger<ZamzaServerFacade<TKey, TValue>> logger, CommitRequest<TKey, TValue> request)
+            {
+                if (logger.IsEnabled(LogLevel.Debug) is false)
+                    return;
+
+                var processedMessages = request.ProcessedMessages
+                    .Select(message => (Topic: message.Topic, Partition: message.Partition, Offset: message.Offset));
+                var messagesWithRetryableFailure = request.MessagesWithRetryableFailure
+                    .Select(message => (Topic: message.Message.Topic, Partition: message.Message.Partition, Offset: message.Message.Offset));
+                var messagesWithCompleteFailure = request.MessagesWithCompleteFailure
+                    .Select(message => (Topic: message.Message.Topic, Partition: message.Message.Partition, Offset: message.Message.Offset));
+                
+                logger.LogDebug(
+                    "Commit request to Zamza server: \n" +
+                    "Processed: {ProcessedMessages}\n Retryable: {RetryableMessages}\n Failed: {FailedMessages}",
+                    processedMessages,
+                    messagesWithRetryableFailure,
+                    messagesWithCompleteFailure);
             }
         }
     }

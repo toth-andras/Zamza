@@ -11,4 +11,14 @@ internal static class PartitionOwnershipMappingExtensions
             ownership.Partition,
             ownership.OwnerEpoch);
     }
+
+    public static ConsumerApi.V1.PartitionOwnership ToGrpc(this PartitionOwnership ownership)
+    {
+        return new ConsumerApi.V1.PartitionOwnership
+        {
+            Topic = ownership.Topic,
+            Partition = ownership.Partition,
+            OwnerEpoch = ownership.OwnerEpoch
+        };
+    }
 }

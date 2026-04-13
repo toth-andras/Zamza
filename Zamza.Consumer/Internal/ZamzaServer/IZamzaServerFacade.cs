@@ -7,9 +7,13 @@ internal interface IZamzaServerFacade<TKey, TValue>
     Task<ClaimPartitionOwnershipResult> ClaimPartitionOwnership(
         ClaimPartitionOwnershipRequest request,
         CancellationToken cancellationToken);
-    
+
     Task<FetchResult<TKey, TValue>> Fetch(
         FetchRequest request,
+        CancellationToken cancellationToken);
+    
+    Task<CommitResult> Commit(
+        CommitRequest<TKey, TValue> request,
         CancellationToken cancellationToken);
     
     Task<bool> Ping(

@@ -14,11 +14,11 @@ internal static class ClaimPartitionOwnershipMappingExtensions
             ConsumerGroup = request.ConsumerGroup,
             PartitionClaims =
             {
-                request.ClaimedPartitions.Select(partition => partition.ToGrpc())
+                request.ClaimedPartitions.Select(partition => partition.ToPartitionClaim())
             }
         };
     }
-    private static ClaimPartitionOwnershipRequest.Types.PartitionClaim ToGrpc(
+    private static ClaimPartitionOwnershipRequest.Types.PartitionClaim ToPartitionClaim(
          this PartitionOwnership claimedPartition)
     {
         return new ClaimPartitionOwnershipRequest.Types.PartitionClaim
