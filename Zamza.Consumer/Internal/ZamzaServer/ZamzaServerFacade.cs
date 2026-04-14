@@ -38,7 +38,7 @@ internal sealed class ZamzaServerFacade<TKey, TValue> : IZamzaServerFacade<TKey,
         var timeout = TimeSpan.FromSeconds(3);
         
         using var scope = _logger.BeginScope(
-            "ConsumerGroup: {ConsumerGroup}, ConsumerId: {ConsumerId}",
+            "[ClaimPartitionOwnership] ConsumerGroup: {ConsumerGroup}, ConsumerId: {ConsumerId}",
             request.ConsumerGroup, request.ConsumerId);
 
         Log.ClaimPartitionOwnership.Request(_logger, request);
@@ -94,7 +94,7 @@ internal sealed class ZamzaServerFacade<TKey, TValue> : IZamzaServerFacade<TKey,
         var fetchTimeout = TimeSpan.FromSeconds(1);
 
         using var scope = _logger.BeginScope(
-            "ConsumerGroup: {ConsumerGroup}, ConsumerId: {ConsumerId}",
+            "[Fetch] ConsumerGroup: {ConsumerGroup}, ConsumerId: {ConsumerId}",
             request.ConsumerGroup, request.ConsumerId);
 
         FetchResponse grpcResponse;
@@ -107,7 +107,7 @@ internal sealed class ZamzaServerFacade<TKey, TValue> : IZamzaServerFacade<TKey,
                     request.ToGrpc(), 
                     deadline: _dateTimeProvider.UtcNow.AddSeconds(fetchTimeout.TotalSeconds), 
                     cancellationToken: cancellationToken)
-                .ConfigureAwait(false);;
+                .ConfigureAwait(false);
         }
         catch (RpcException exception) when (exception.StatusCode == StatusCode.Unavailable)
         {
@@ -160,7 +160,7 @@ internal sealed class ZamzaServerFacade<TKey, TValue> : IZamzaServerFacade<TKey,
         CancellationToken cancellationToken)
     {
         using var scope = _logger.BeginScope(
-            "ConsumerGroup: {ConsumerGroup}, ConsumerId: {ConsumerId}",
+            "[Commit] ConsumerGroup: {ConsumerGroup}, ConsumerId: {ConsumerId}",
             request.ConsumerGroup, request.ConsumerId);
         
         Log.Commit.Request(_logger, request);
@@ -168,12 +168,16 @@ internal sealed class ZamzaServerFacade<TKey, TValue> : IZamzaServerFacade<TKey,
         var commitTimeout = TimeSpan.FromSeconds(3);
         try
         {
-            var grpcResult= await _grpcClient.CommitAsync(
-                request.ToGrpc(),
-                deadline: _dateTimeProvider.UtcNow.AddSeconds(commitTimeout.TotalSeconds),
-                cancellationToken: cancellationToken);
+            var grpcResult= await _grpcClient
+                .CommitAsync(request.ToGrpc(), 
+                    deadline: _dateTimeProvider.UtcNow.AddSeconds(commitTimeout.TotalSeconds), 
+                    cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-            return grpcResult.ToModel();
+            var result = grpcResult.ToModel();
+            Log.Commit.Response(_logger, result);
+
+            return result;
         }
         catch (RpcException exception) when (exception.StatusCode is StatusCode.Unavailable)
         {
@@ -197,7 +201,7 @@ internal sealed class ZamzaServerFacade<TKey, TValue> : IZamzaServerFacade<TKey,
         CancellationToken cancellationToken)
     {
         using var scope = _logger.BeginScope(
-            "ConsumerGroup: {ConsumerGroup}, ConsumerId: {ConsumerId}",
+            "[Ping] ConsumerGroup: {ConsumerGroup}, ConsumerId: {ConsumerId}",
             request.ConsumerGroup, request.ConsumerId);
         
         _logger.LogDebug("Ping request to Zamza server");
@@ -230,7 +234,7 @@ internal sealed class ZamzaServerFacade<TKey, TValue> : IZamzaServerFacade<TKey,
         var leaveTimeout = TimeSpan.FromSeconds(1);
         
         using var scope = _logger.BeginScope(
-            "ConsumerGroup: {ConsumerGroup}, ConsumerId: {ConsumerId}",
+            "[Leave] ConsumerGroup: {ConsumerGroup}, ConsumerId: {ConsumerId}",
             request.ConsumerGroup, request.ConsumerId);
         
         try
@@ -346,6 +350,16 @@ internal sealed class ZamzaServerFacade<TKey, TValue> : IZamzaServerFacade<TKey,
                     processedMessages,
                     messagesWithRetryableFailure,
                     messagesWithCompleteFailure);
+            }
+
+            public static void Response(ILogger<ZamzaServerFacade<TKey, TValue>> logger, CommitResult result)
+            {
+                if (logger.IsEnabled(LogLevel.Debug) is false)
+                    return;
+                
+                var partitionsWithIrrelevantOwnerships = result.PartitionsWithIrrelevantOwnership
+                    .Select(partition => (Topic: partition.Topic, Partition: partition.Partition));
+                logger.LogDebug("Partitions with irrelevant ownerships: {Partitions}", partitionsWithIrrelevantOwnerships);
             }
         }
     }
