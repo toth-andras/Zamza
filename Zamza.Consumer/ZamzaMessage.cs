@@ -84,4 +84,9 @@ public sealed class ZamzaMessage<TKey, TValue>
         MaxRetriesCount = maxRetriesCount;
         ProcessingDeadline = processingDeadline;
     }
+
+    internal void IncrementRetriesCount()
+    {
+        RetriesCount++;
+    }
 }

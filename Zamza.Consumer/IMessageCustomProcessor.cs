@@ -6,7 +6,7 @@ namespace Zamza.Consumer;
 /// </summary>
 /// <typeparam name="TKey">Type of the message key.</typeparam>
 /// <typeparam name="TValue">Type of the message value.</typeparam>
-public interface IMessageProcessor<TKey, TValue>
+public interface IMessageCustomProcessor<TKey, TValue>
 {
     Task<ProcessResult> Process(
         ZamzaMessage<TKey, TValue> message, 
