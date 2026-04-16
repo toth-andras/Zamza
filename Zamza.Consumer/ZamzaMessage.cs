@@ -60,6 +60,11 @@ public sealed class ZamzaMessage<TKey, TValue>
     /// if not processed correctly, must be considered to be poisoned.
     /// </summary>
     public DateTime? ProcessingDeadline { get; private init; }
+    
+    /// <summary>
+    /// Indicates whether the message was consumed from Kafka.
+    /// </summary>
+    public bool IsFromKafka { get; private init; }
 
     public ZamzaMessage(
         string topic,
@@ -71,7 +76,8 @@ public sealed class ZamzaMessage<TKey, TValue>
         DateTime timestamp,
         int retriesCount,
         int maxRetriesCount,
-        DateTime? processingDeadline)
+        DateTime? processingDeadline,
+        bool isFromKafka)
     {
         Topic = topic;
         Partition = partition;
@@ -83,6 +89,7 @@ public sealed class ZamzaMessage<TKey, TValue>
         RetriesCount = retriesCount;
         MaxRetriesCount = maxRetriesCount;
         ProcessingDeadline = processingDeadline;
+        IsFromKafka = isFromKafka;
     }
 
     internal void IncrementRetriesCount()

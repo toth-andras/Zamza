@@ -22,7 +22,8 @@ internal static class ZamzaMessageMappingExtensions
             message.Timestamp.ToDateTime(),
             message.RetriesCount,
             message.MaxRetriesCount,
-            message.ProcessingDeadlineUtc?.ToDateTime());
+            message.ProcessingDeadlineUtc?.ToDateTime(),
+            isFromKafka: false);
     }
 
     public static ConsumerApiMessageCore ToGrpc<TKey, TValue>(this ZamzaMessage<TKey, TValue> message)

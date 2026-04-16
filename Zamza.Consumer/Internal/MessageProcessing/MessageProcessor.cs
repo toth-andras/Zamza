@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Zamza.Consumer.Internal.Configs;
 using Zamza.Consumer.Internal.MessageProcessing.Models;
 using Zamza.Consumer.Internal.Utils.DateTimeProvider;
 
@@ -21,7 +22,7 @@ internal sealed class MessageProcessor<TKey, TValue> : IMessageProcessor<TKey, T
     }
 
     public async Task<MessageSetProcessingResult<TKey, TValue>> ProcessMessages(
-        ZamzaConsumerSettings<TKey, TValue> config,
+        ZamzaConsumerConfig<TKey, TValue> config,
         IReadOnlyCollection<ZamzaMessage<TKey, TValue>> messages,
         CancellationToken cancellationToken)
     {
@@ -31,8 +32,8 @@ internal sealed class MessageProcessor<TKey, TValue> : IMessageProcessor<TKey, T
 
         using var scope = _logger.BeginScope(
             "[MessageProcessing] ConsumerGroup: {ConsumerGroup}, ConsumerId: {ConsumerId}",
-            config.ConsumerGroup,
-            config.ConsumerId);
+            config.MainInfo.ConsumerGroup,
+            config.MainInfo.ConsumerId);
         
         foreach (var message in messages)
         {
@@ -61,7 +62,11 @@ internal sealed class MessageProcessor<TKey, TValue> : IMessageProcessor<TKey, T
             }
             
             // Postprocessing
-            message.IncrementRetriesCount();
+            if (message.IsFromKafka is false)
+            {
+                // If the message is not from Kafka, then this is a retry
+                message.IncrementRetriesCount();
+            }
             
             if (processingResult == ProcessResult.RetryableFail &&
                 message.RetriesCount >= message.MaxRetriesCount)
@@ -105,24 +110,24 @@ internal sealed class MessageProcessor<TKey, TValue> : IMessageProcessor<TKey, T
 
     private TimeSpan GetGapBeforeNextRetry(
         ZamzaMessage<TKey, TValue> message,
-        ZamzaConsumerSettings<TKey, TValue> config)
+        ZamzaConsumerConfig<TKey, TValue> config)
     {
-        if (config.ProcessorConfig.RetryGapEvaluator is null)
+        if (config.MessageProcessor.RetryGapEvaluator is null)
         {
-            return config.ProcessorConfig.MinRetriesGap;
+            return config.MessageProcessor.MinRetriesGap;
         }
         
         try
         {
-            return config.ProcessorConfig.RetryGapEvaluator.Invoke(message);
+            return config.MessageProcessor.RetryGapEvaluator.Invoke(message);
         }
         catch (Exception exception)
         {
             _logger.LogError(
                 exception, 
                 $"Evaluation of the gap before next retry caused exception. " +
-                $"Using {nameof(ZamzaConsumerSettings<,>.ProcessorConfig.MinRetriesGap)}");
-            return config.ProcessorConfig.MinRetriesGap;
+                $"Using {nameof(ZamzaConsumerConfig<,>.MessageProcessor.MinRetriesGap)}");
+            return config.MessageProcessor.MinRetriesGap;
         }
     }
 

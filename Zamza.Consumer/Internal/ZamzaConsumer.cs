@@ -1,5 +1,8 @@
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
+using Zamza.Consumer.Internal.Configs;
+using Zamza.Consumer.Internal.ConsumptionController;
+using Zamza.Consumer.Internal.KafkaConsumerFacade;
 using Zamza.Consumer.Internal.MessageProcessing;
 using Zamza.Consumer.Internal.Models;
 using Zamza.Consumer.Internal.Utils.DateTimeProvider;
@@ -7,56 +10,56 @@ using Zamza.Consumer.Internal.ZamzaServer;
 using Zamza.Consumer.Internal.ZamzaServer.Exceptions;
 using Zamza.Consumer.Internal.ZamzaServer.Models;
 
-namespace Zamza.Consumer.Internal.ConsumptionController;
+namespace Zamza.Consumer.Internal;
 
-internal sealed class ConsumptionController<TKey, TValue> : IConsumptionController<TKey, TValue>
+internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
 {
     private readonly ConsumptionControllerState _state;
     private readonly PingRequest _pingRequest;
 
     private IReadOnlyList<PartitionOwnership> _currentlyOwnedPartitions;
     private readonly Dictionary<(string Topic, int Partition), PartitionOwnership> _knownConsumerGroupPartitionOwnerships;
-    private readonly Dictionary<(string Topic, int Partition), long> _commitedKafkaOffsets;
+    private readonly ZamzaConsumerConfig<TKey, TValue> _consumerConfig;
     
-    private readonly ZamzaConsumerSettings<TKey, TValue> _consumerConfig;
-    private readonly IConsumer<TKey, TValue> _kafkaConsumer;
+    private readonly IKafkaConsumerFacade<TKey, TValue> _kafkaConsumerFacade;
     private readonly IZamzaServerFacade<TKey, TValue> _zamzaServerFacade;
     private readonly IMessageProcessor<TKey, TValue> _messageProcessor;
-    private readonly IDateTimeProvider _dateTimeProvider;
-    private readonly ILogger<ConsumptionController<TKey, TValue>> _logger;
+    private readonly ILogger<ZamzaConsumer<TKey, TValue>> _logger;
 
-    public ConsumptionController(
-        ZamzaConsumerSettings<TKey, TValue> consumerConfig,
-        IConsumer<TKey, TValue> kafkaConsumer,
+    public ZamzaConsumer(
+        ZamzaConsumerConfig<TKey, TValue> consumerConfig,
+        IKafkaConsumerFacade<TKey, TValue> kafkaConsumerFacade,
         IZamzaServerFacade<TKey, TValue> zamzaServerFacade,
         IMessageProcessor<TKey, TValue> messageProcessor,
-        IDateTimeProvider dateTimeProvider,
-        ILogger<ConsumptionController<TKey, TValue>> logger)
+        ILogger<ZamzaConsumer<TKey, TValue>> logger)
     {
         _consumerConfig = consumerConfig;
-        _kafkaConsumer = kafkaConsumer;
+        
+        _kafkaConsumerFacade = kafkaConsumerFacade;
+        _kafkaConsumerFacade.OnConsumerGroupRebalance += OnConsumerGroupRebalance;
         _zamzaServerFacade = zamzaServerFacade;
+        
         _messageProcessor = messageProcessor;
-        _dateTimeProvider = dateTimeProvider;
         _logger = logger;
         
         _state = new ConsumptionControllerState();
-        _pingRequest = new PingRequest(consumerConfig.ConsumerId, consumerConfig.ConsumerGroup);
+        _pingRequest = new PingRequest(
+            _consumerConfig.MainInfo.ConsumerId,
+            _consumerConfig.MainInfo.ConsumerGroup);
         _currentlyOwnedPartitions = [];
         _knownConsumerGroupPartitionOwnerships = [];
-        _commitedKafkaOffsets = [];
     }
-
-    public async Task RunMainLoop(CancellationToken token)
+    
+    public async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation(
             "Starting consumer with id {ConsumerId} for consumer group {ConsumerGroup}",
-            _consumerConfig.ConsumerId,
-            _consumerConfig.ConsumerGroup);
+            _consumerConfig.MainInfo.ConsumerId,
+            _consumerConfig.MainInfo.ConsumerGroup);
 
         var iteration = 0;
 
-        while (!token.IsCancellationRequested)
+        while (!stoppingToken.IsCancellationRequested)
         {
             if (_state.CurrentState is ConsumptionControllerStateEnum.Stopped)
             {
@@ -65,20 +68,20 @@ internal sealed class ConsumptionController<TKey, TValue> : IConsumptionControll
 
             if (_state.CurrentState is ConsumptionControllerStateEnum.ZamzaServerNotAvailable)
             {
-                await Ping(token).ConfigureAwait(false);
+                await Ping(stoppingToken).ConfigureAwait(false);
                 continue;
             }
             
             if (_state.CurrentState is ConsumptionControllerStateEnum.PartitionOwnershipClaimRequired)
             {
-                await ClaimPartitionOwnership(ConsumptionControllerStateEnum.ProcessKafka, token)
+                await ClaimPartitionOwnership(ConsumptionControllerStateEnum.ProcessKafka, stoppingToken)
                     .ConfigureAwait(false);
                 iteration = 0;
                 continue;
             }
             
             ++iteration;
-            if (iteration == _consumerConfig.KafkaCallsPerZamzaCall + 1)
+            if (iteration == _consumerConfig.ZamzaFetch.KafkaConsumesPerZamzaFetch + 1)
             {
                 _state.ChangeState(ConsumptionControllerStateEnum.ProcessZamza);
                 iteration = 0;
@@ -90,26 +93,28 @@ internal sealed class ConsumptionController<TKey, TValue> : IConsumptionControll
 
             if (_state.CurrentState is ConsumptionControllerStateEnum.ProcessKafka)
             {
-                await ProcessKafka(token).ConfigureAwait(false);
+                await ProcessKafka(stoppingToken).ConfigureAwait(false);
                 continue;
             }
 
             if (_state.CurrentState is ConsumptionControllerStateEnum.ProcessZamza)
             {
-                await ProcessZamza(token).ConfigureAwait(false);
+                await ProcessZamza(stoppingToken).ConfigureAwait(false);
                 continue;
             }
         }
     }
 
-    public void OnKafkaConsumerGroupRebalance()
+    public void Stop() {}
+
+    private void OnConsumerGroupRebalance()
     {
         _state.ChangeState(newState: ConsumptionControllerStateEnum.PartitionOwnershipClaimRequired);
     }
-
+    
     private async Task Ping(CancellationToken cancellationToken)
     {
-        await Task.Delay(_consumerConfig.PingConfig.PingInterval, cancellationToken).ConfigureAwait(false);
+        await Task.Delay(_consumerConfig.Ping.PingInterval, cancellationToken).ConfigureAwait(false);
         var serverAvailable = await _zamzaServerFacade
             .Ping(
                 _pingRequest, 
@@ -130,7 +135,7 @@ internal sealed class ConsumptionController<TKey, TValue> : IConsumptionControll
         ConsumptionControllerStateEnum desiredNextState,
         CancellationToken cancellationToken)
     {
-        var partitionsToClaim = _kafkaConsumer.Assignment;
+        var partitionsToClaim = _kafkaConsumerFacade.AssignedPartitions;
         const int initialOwnershipEpoch = 0;
         
         var claimsList = new List<PartitionOwnership>(partitionsToClaim.Count);
@@ -155,8 +160,8 @@ internal sealed class ConsumptionController<TKey, TValue> : IConsumptionControll
             result = await _zamzaServerFacade
                 .ClaimPartitionOwnership(
                     new ClaimPartitionOwnershipRequest(
-                        _consumerConfig.ConsumerId,
-                        _consumerConfig.ConsumerGroup,
+                        _consumerConfig.MainInfo.ConsumerId,
+                        _consumerConfig.MainInfo.ConsumerGroup,
                         claimsList),
                     cancellationToken)
                 .ConfigureAwait(false);
@@ -186,22 +191,9 @@ internal sealed class ConsumptionController<TKey, TValue> : IConsumptionControll
 
     private async Task ProcessKafka(CancellationToken cancellationToken)
     {
-        var offsets = _commitedKafkaOffsets
-            .Select(offset => new TopicPartitionOffset(
-                offset.Key.Topic,
-                offset.Key.Partition,
-                offset.Value))
-            .ToList();
-        foreach (var offset in offsets)
-        {
-            _kafkaConsumer.Seek(offset);   
-        }
+        _kafkaConsumerFacade.Seek(_kafkaConsumerFacade.CommitedOffsets);
         
-        var messages = Enumerable.Range(0, 5)
-            .Select(_ => _kafkaConsumer.Consume(TimeSpan.FromMilliseconds(100)))
-            .Where(res => res is not null)
-            .Select(ToZamzaMessage)
-            .ToList();
+        var messages = _kafkaConsumerFacade.Consume();
         
         // During the consume from Kafka, a rebalance handler may have been called.
         if (_state.CurrentState is ConsumptionControllerStateEnum.PartitionOwnershipClaimRequired)
@@ -209,7 +201,7 @@ internal sealed class ConsumptionController<TKey, TValue> : IConsumptionControll
             return;
         }
 
-        if (messages.Count == 0)
+        if (messages.Length == 0)
         {
             return;
         }
@@ -222,8 +214,8 @@ internal sealed class ConsumptionController<TKey, TValue> : IConsumptionControll
             .ConfigureAwait(false);
         
         var commitRequest = new CommitRequest<TKey, TValue>(
-            _consumerConfig.ConsumerId,
-            _consumerConfig.ConsumerGroup,
+            _consumerConfig.MainInfo.ConsumerId,
+            _consumerConfig.MainInfo.ConsumerGroup,
             _currentlyOwnedPartitions,
             processingResult.ProcessedMessages,
             processingResult.MessagesWithRetryableFailure,
@@ -270,22 +262,21 @@ internal sealed class ConsumptionController<TKey, TValue> : IConsumptionControll
                 group.Key.Partition,
                 group.Max(message => message.Offset) + 1))
             .ToArray();
-
-        _kafkaConsumer.Commit(offsetsToCommit);
-
-        foreach (var offset in offsetsToCommit)
-        {
-            _commitedKafkaOffsets[(offset.Topic, offset.Partition.Value)] = offset.Offset.Value;
-        }
+        
+        _kafkaConsumerFacade.Commit(offsetsToCommit);
     }
 
     private async Task ProcessZamza(CancellationToken cancellationToken)
     {
+        var commitedOffsets = _kafkaConsumerFacade.CommitedOffsets.ToDictionary(
+            tpo => (tpo.Topic, tpo.Partition.Value),
+            tpo => tpo.Offset.Value);
+        
         var fetchedPartitions = _currentlyOwnedPartitions
             .Select(partition => new FetchRequest.FetchedPartition(
                 partition.Topic,
                 partition.Partition,
-                _commitedKafkaOffsets.GetValueOrDefault((partition.Topic, partition.Partition), 0L),
+                commitedOffsets.GetValueOrDefault((partition.Topic, partition.Partition), 0L),
                 partition.OwnerEpoch))
             .ToArray();
         
@@ -295,9 +286,9 @@ internal sealed class ConsumptionController<TKey, TValue> : IConsumptionControll
             fetchResult = await _zamzaServerFacade
                 .Fetch(
                     new FetchRequest(
-                        _consumerConfig.ConsumerId,
-                        _consumerConfig.ConsumerGroup,
-                        _consumerConfig.FetchLimit,
+                        _consumerConfig.MainInfo.ConsumerId,
+                        _consumerConfig.MainInfo.ConsumerGroup,
+                        _consumerConfig.ZamzaFetch.FetchLimit,
                         fetchedPartitions),
                     cancellationToken)
                 .ConfigureAwait(false);
@@ -335,8 +326,8 @@ internal sealed class ConsumptionController<TKey, TValue> : IConsumptionControll
             .ConfigureAwait(false);
 
         var commitRequest = new CommitRequest<TKey, TValue>(
-            _consumerConfig.ConsumerId,
-            _consumerConfig.ConsumerGroup,
+            _consumerConfig.MainInfo.ConsumerId,
+            _consumerConfig.MainInfo.ConsumerGroup,
             _currentlyOwnedPartitions,
             processingResult.ProcessedMessages,
             processingResult.MessagesWithRetryableFailure,
@@ -375,33 +366,6 @@ internal sealed class ConsumptionController<TKey, TValue> : IConsumptionControll
         foreach (var newPartitionOwnership in newConsumerGroupPartitionOwnerships)
         {
             _knownConsumerGroupPartitionOwnerships[(newPartitionOwnership.Topic, newPartitionOwnership.Partition)] = newPartitionOwnership;
-        }
-    }
-
-    private ZamzaMessage<TKey, TValue> ToZamzaMessage(ConsumeResult<TKey, TValue> consumeResult)
-    {
-        return new ZamzaMessage<TKey, TValue>(
-            consumeResult.Topic,
-            consumeResult.Partition.Value,
-            consumeResult.Offset.Value,
-            consumeResult.Message.Headers.ToDictionary(
-                header => header.Key,
-                header => header.GetValueBytes()),
-            consumeResult.Message.Key,
-            consumeResult.Message.Value,
-            consumeResult.Message.Timestamp.UtcDateTime,
-            retriesCount: 0,
-            maxRetriesCount: _consumerConfig.ProcessorConfig.MaxRetriesCount,
-            processingDeadline: GetDeadline());
-
-        DateTime? GetDeadline()
-        {
-            if (_consumerConfig.ProcessorConfig.ProcessingPeriod is null)
-            {
-                return null;
-            }
-            
-            return _dateTimeProvider.UtcNow.Add(_consumerConfig.ProcessorConfig.ProcessingPeriod.Value);
         }
     }
 }
