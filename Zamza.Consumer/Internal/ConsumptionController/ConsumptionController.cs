@@ -109,6 +109,7 @@ internal sealed class ConsumptionController<TKey, TValue> : IConsumptionControll
 
     private async Task Ping(CancellationToken cancellationToken)
     {
+        await Task.Delay(_consumerConfig.PingConfig.PingInterval, cancellationToken).ConfigureAwait(false);
         var serverAvailable = await _zamzaServerFacade
             .Ping(
                 _pingRequest, 
@@ -176,7 +177,9 @@ internal sealed class ConsumptionController<TKey, TValue> : IConsumptionControll
 
         if (result.IsSuccessful)
         {
-            _currentlyOwnedPartitions = claimsList;
+            _currentlyOwnedPartitions = partitionsToClaim
+                .Select(partition => _knownConsumerGroupPartitionOwnerships[(partition.Topic, partition.Partition.Value)])
+                .ToList();
             _state.ChangeState(desiredNextState);
         }
     }
