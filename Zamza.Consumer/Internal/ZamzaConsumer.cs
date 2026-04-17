@@ -215,6 +215,17 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
         // During the consume from Kafka, a rebalance handler may have been called.
         if (_state.CurrentState is ConsumerStateEnum.PartitionOwnershipClaimRequired)
         {
+            // Resetting consumer's offset so it can read the messages
+            if (messages.Length > 0)
+            {
+                var offsetsToSeekTo = messages
+                    .GroupBy(message => (message.Topic, message.Partition))
+                    .Select(onePartitionMessages => onePartitionMessages.MinBy(message => message.Offset))
+                    .Select(message => new TopicPartitionOffset(message.Topic, message.Partition, message.Offset))
+                    .ToArray();
+                _kafkaConsumerFacade.Seek(offsetsToSeekTo);
+            }
+            
             return;
         }
 
