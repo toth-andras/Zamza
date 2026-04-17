@@ -57,10 +57,12 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
     
     public async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation(
-            "Starting consumer with id {ConsumerId} for consumer group {ConsumerGroup}",
-            _consumerConfig.MainInfo.ConsumerId,
-            _consumerConfig.MainInfo.ConsumerGroup);
+        using var scope = _logger.BeginScope(
+            "ConsumerGroup: {ConsumerGroup}, ConsumerId: {ConsumerId}",
+            _consumerConfig.MainInfo.ConsumerGroup,
+            _consumerConfig.MainInfo.ConsumerId);
+        
+        _logger.LogInformation("Consumer started");
 
         var iteration = 0;
 
@@ -68,6 +70,7 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
         {
             if (_state.CurrentState is ConsumerStateEnum.Stopped)
             {
+                _logger.LogInformation("Consumer stopped");
                 return;
             }
 
@@ -120,6 +123,8 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
     private async Task Ping(CancellationToken cancellationToken)
     {
         await Task.Delay(_consumerConfig.Ping.PingInterval, cancellationToken).ConfigureAwait(false);
+        
+        _logger.LogDebug("Ping request to Zamza.Server");
         var serverAvailable = await _zamzaServerFacade
             .Ping(
                 _pingRequest, 
@@ -130,12 +135,16 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
         {
             _zamzaServerUnavailableSince = null;
             _state.ChangeState(ConsumerStateEnum.PartitionOwnershipClaimRequired);
-            _logger.LogInformation("Zamza server is available again. Resuming consumption");
+            _logger.LogInformation("Zamza.Server is available again. Resuming consumption");
             return;
         }
 
         if (_zamzaServerUnavailableSince is null)
         {
+            _logger.LogTrace(
+                "Started measuring Zamza.Server offline time. The max possible offline period is {MaxOfflineMs} ms",
+                _consumerConfig.Ping.MaxOfflineTime.TotalMilliseconds);
+            
             _zamzaServerUnavailableSince = _dateTimeProvider.UtcNow;
             return;
         }
@@ -143,7 +152,7 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
         var serverOfflineTime = _dateTimeProvider.UtcNow - _zamzaServerUnavailableSince.Value;
         if (serverOfflineTime > _consumerConfig.Ping.MaxOfflineTime)
         {
-            _logger.LogCritical("Zamza server is offline. Stopping the consumer");
+            _logger.LogCritical("Zamza.Server is offline. Stopping the consumer");
             _state.ChangeState(ConsumerStateEnum.Stopped);
         }
     }
@@ -152,8 +161,17 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
         ConsumerStateEnum desiredNextState,
         CancellationToken cancellationToken)
     {
-        var partitionsToClaim = _kafkaConsumerFacade.AssignedPartitions;
+        _logger.LogDebug("ClaimPartitionOwnership request to Zamza.Server");
+        
         const int initialOwnershipEpoch = 0;
+        var partitionsToClaim = _kafkaConsumerFacade.AssignedPartitions;
+
+        if (partitionsToClaim.Count == 0)
+        {
+            _logger.LogTrace("No partitions to claim. Ending claim");
+            _state.ChangeState(desiredNextState);
+            return;
+        }
         
         var claimsList = new List<PartitionOwnership>(partitionsToClaim.Count);
 
@@ -171,6 +189,15 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
             claimsList.Add(_knownConsumerGroupPartitionOwnerships[(partitionToClaim.Topic, partitionToClaim.Partition.Value)]);
         }
 
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            var claimedPartitionsToLog = claimsList
+                .Select(claim => (claim.Topic, claim.Partition))
+                .ToArray();
+            
+            _logger.LogDebug("Claimed partitions: {Partitions}", claimedPartitionsToLog);
+        }
+
         ClaimPartitionOwnershipResult result;
         try
         {
@@ -185,13 +212,15 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
         }
         catch (ZamzaException zamzaException) when (zamzaException.Code is ZamzaErrorCode.ServerUnavailable)
         {
-            _logger.LogError("Zamza server is not available, switching to ping");
+            _logger.LogError("Zamza.Server is not available, switching to pinging");
             _state.ChangeState(newState: ConsumerStateEnum.ZamzaServerNotAvailable);
             return;
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Unexpected exception occurred while claiming partition ownership");
+            _logger.LogWarning(
+                exception, 
+                "Unexpected exception occurred while ClaimPartitionOwnership request to Zamza.Server");
             return;
         }
         
@@ -203,11 +232,15 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
                 .Select(partition => _knownConsumerGroupPartitionOwnerships[(partition.Topic, partition.Partition.Value)])
                 .ToList();
             _state.ChangeState(desiredNextState);
+            
+            _logger.LogDebug("Successfully claimed partitions");
         }
     }
 
     private async Task ProcessKafka(CancellationToken cancellationToken)
     {
+        _logger.LogDebug("Consuming messages from Kafka");
+        
         _kafkaConsumerFacade.Seek(_kafkaConsumerFacade.CommitedOffsets);
         
         var messages = _kafkaConsumerFacade.Consume();
@@ -231,7 +264,16 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
 
         if (messages.Length == 0)
         {
+            _logger.LogDebug("No messages consumed from Kafka");
             return;
+        }
+
+        if (_logger.IsEnabled(LogLevel.Trace))
+        {
+            var consumedMessagesForLog = messages
+                .Select(message => (message.Topic, message.Partition, message.Offset))
+                .ToArray();
+            _logger.LogDebug("Consumed messages (topic, partition, offset): {Messages}", consumedMessagesForLog);
         }
         
         var processingResult = await _messageProcessor
@@ -258,13 +300,15 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
         }
         catch (ZamzaException exception) when (exception.Code is ZamzaErrorCode.ServerUnavailable)
         {
-            _logger.LogError("Zamza server is not available, switching to ping");
+            _logger.LogError("Zamza.Server is not available, switching to pinging");
             _state.ChangeState(ConsumerStateEnum.ZamzaServerNotAvailable);
             return;
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Unexpected exception occurred while commit to Zamza");
+            _logger.LogWarning(
+                exception, 
+                "Unexpected exception occurred while commiting message processing results in Zamza.Server");
             return;
         }
         
@@ -316,6 +360,8 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
 
     private async Task ProcessZamza(CancellationToken cancellationToken)
     {
+        _logger.LogDebug("Fetching messages from Zamza.Server");
+        
         var commitedOffsets = _kafkaConsumerFacade.CommitedOffsets.ToDictionary(
             tpo => (tpo.Topic, tpo.Partition.Value),
             tpo => tpo.Offset.Value);
@@ -349,7 +395,7 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Unexpected exception occurred while processing fetch from Zamza");
+            _logger.LogWarning(exception, "Unexpected exception occurred while processing fetch from Zamza");
             return;
         }
         
@@ -363,7 +409,17 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
 
         if (fetchResult.Messages.Count == 0)
         {
+            _logger.LogTrace("No messages fetched from Zamza");
             return;
+        }
+
+        if (_logger.IsEnabled(LogLevel.Trace))
+        {
+            var messagesToLog = fetchResult.Messages
+                .Select(message => (message.Topic, message.Partition, message.Offset))
+                .ToArray();
+            
+            _logger.LogTrace("Fetched messages (topic, partition, offset): {Messages}", messagesToLog);
         }
 
         var processingResult = await _messageProcessor
@@ -390,13 +446,15 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
         }
         catch (ZamzaException zamzaException) when (zamzaException.Code is ZamzaErrorCode.ServerUnavailable)
         {
-            _logger.LogError("Zamza server is not available, switching to ping");
+            _logger.LogError("Zamza.Server is not available, switching to pinging");
             _state.ChangeState(ConsumerStateEnum.ZamzaServerNotAvailable);
             return;
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Unexpected exception occurred while processing commit in Zamza");
+            _logger.LogWarning(
+                exception,
+                "Unexpected exception occurred while committing message processing results in Zamza.Server");
             return;
         }
         

@@ -29,18 +29,13 @@ internal sealed class MessageProcessor<TKey, TValue> : IMessageProcessor<TKey, T
         List<ZamzaMessage<TKey, TValue>> processedMessages = new(messages.Count);
         List<(ZamzaMessage<TKey, TValue> Message, TimeSpan NextRetryAfter)> messagesWithRetryableFailure = [];
         List<(ZamzaMessage<TKey, TValue> Message, DateTime FailedAtUtc)> messagesWithCompleteFailure = [];
-
-        using var scope = _logger.BeginScope(
-            "[MessageProcessing] ConsumerGroup: {ConsumerGroup}, ConsumerId: {ConsumerId}",
-            config.MainInfo.ConsumerGroup,
-            config.MainInfo.ConsumerId);
         
         foreach (var message in messages)
         {
             // Preprocessing
             if (IsFailedCompletely(message, _dateTimeProvider.UtcNow))
             {
-                _logger.LogInformation(
+                _logger.LogTrace(
                     "Message (Topic: \'{Topic}\', Partition: {Partition}, Offset: {Offset}) automatically set to completely failed",
                     message.Topic,
                     message.Partition,
@@ -138,7 +133,7 @@ internal sealed class MessageProcessor<TKey, TValue> : IMessageProcessor<TKey, T
             return;
         }
         
-        _logger.LogDebug(
+        _logger.LogTrace(
             "Message (Topic: \'{Topic}\', Partition: {Partition}, Offset: {Offset}) processed with result: {Result}",
             message.Topic,
             message.Partition,
