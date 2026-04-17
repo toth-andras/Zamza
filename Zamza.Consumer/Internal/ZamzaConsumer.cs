@@ -14,8 +14,9 @@ namespace Zamza.Consumer.Internal;
 
 internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
 {
-    private readonly ConsumptionControllerState _state;
+    private readonly ConsumerState _state;
     private readonly PingRequest _pingRequest;
+    private DateTime? _zamzaServerUnavailableSince; 
 
     private IReadOnlyList<PartitionOwnership> _currentlyOwnedPartitions;
     private readonly Dictionary<(string Topic, int Partition), PartitionOwnership> _knownConsumerGroupPartitionOwnerships;
@@ -25,13 +26,15 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
     private readonly IZamzaServerFacade<TKey, TValue> _zamzaServerFacade;
     private readonly IMessageProcessor<TKey, TValue> _messageProcessor;
     private readonly ILogger<ZamzaConsumer<TKey, TValue>> _logger;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
     public ZamzaConsumer(
         ZamzaConsumerConfig<TKey, TValue> consumerConfig,
         IKafkaConsumerFacade<TKey, TValue> kafkaConsumerFacade,
         IZamzaServerFacade<TKey, TValue> zamzaServerFacade,
         IMessageProcessor<TKey, TValue> messageProcessor,
-        ILogger<ZamzaConsumer<TKey, TValue>> logger)
+        ILogger<ZamzaConsumer<TKey, TValue>> logger,
+        IDateTimeProvider dateTimeProvider)
     {
         _consumerConfig = consumerConfig;
         
@@ -41,13 +44,15 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
         
         _messageProcessor = messageProcessor;
         _logger = logger;
+        _dateTimeProvider = dateTimeProvider;
         
-        _state = new ConsumptionControllerState();
+        _state = new ConsumerState();
         _pingRequest = new PingRequest(
             _consumerConfig.MainInfo.ConsumerId,
             _consumerConfig.MainInfo.ConsumerGroup);
         _currentlyOwnedPartitions = [];
         _knownConsumerGroupPartitionOwnerships = [];
+        _zamzaServerUnavailableSince = null;
     }
     
     public async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -61,20 +66,20 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            if (_state.CurrentState is ConsumptionControllerStateEnum.Stopped)
+            if (_state.CurrentState is ConsumerStateEnum.Stopped)
             {
                 return;
             }
 
-            if (_state.CurrentState is ConsumptionControllerStateEnum.ZamzaServerNotAvailable)
+            if (_state.CurrentState is ConsumerStateEnum.ZamzaServerNotAvailable)
             {
                 await Ping(stoppingToken).ConfigureAwait(false);
                 continue;
             }
             
-            if (_state.CurrentState is ConsumptionControllerStateEnum.PartitionOwnershipClaimRequired)
+            if (_state.CurrentState is ConsumerStateEnum.PartitionOwnershipClaimRequired)
             {
-                await ClaimPartitionOwnership(ConsumptionControllerStateEnum.ProcessKafka, stoppingToken)
+                await ClaimPartitionOwnership(ConsumerStateEnum.ProcessKafka, stoppingToken)
                     .ConfigureAwait(false);
                 iteration = 0;
                 continue;
@@ -83,21 +88,21 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
             ++iteration;
             if (iteration == _consumerConfig.ZamzaFetch.KafkaConsumesPerZamzaFetch + 1)
             {
-                _state.ChangeState(ConsumptionControllerStateEnum.ProcessZamza);
+                _state.ChangeState(ConsumerStateEnum.ProcessZamza);
                 iteration = 0;
             }
             else
             {
-                _state.ChangeState(ConsumptionControllerStateEnum.ProcessKafka);
+                _state.ChangeState(ConsumerStateEnum.ProcessKafka);
             }
 
-            if (_state.CurrentState is ConsumptionControllerStateEnum.ProcessKafka)
+            if (_state.CurrentState is ConsumerStateEnum.ProcessKafka)
             {
                 await ProcessKafka(stoppingToken).ConfigureAwait(false);
                 continue;
             }
 
-            if (_state.CurrentState is ConsumptionControllerStateEnum.ProcessZamza)
+            if (_state.CurrentState is ConsumerStateEnum.ProcessZamza)
             {
                 await ProcessZamza(stoppingToken).ConfigureAwait(false);
                 continue;
@@ -109,7 +114,7 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
 
     private void OnConsumerGroupRebalance()
     {
-        _state.ChangeState(newState: ConsumptionControllerStateEnum.PartitionOwnershipClaimRequired);
+        _state.ChangeState(newState: ConsumerStateEnum.PartitionOwnershipClaimRequired);
     }
     
     private async Task Ping(CancellationToken cancellationToken)
@@ -123,16 +128,28 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
 
         if (serverAvailable)
         {
-            _state.ChangeState(ConsumptionControllerStateEnum.PartitionOwnershipClaimRequired);
+            _zamzaServerUnavailableSince = null;
+            _state.ChangeState(ConsumerStateEnum.PartitionOwnershipClaimRequired);
             _logger.LogInformation("Zamza server is available again. Resuming consumption");
             return;
         }
+
+        if (_zamzaServerUnavailableSince is null)
+        {
+            _zamzaServerUnavailableSince = _dateTimeProvider.UtcNow;
+            return;
+        }
         
-        // TODO: add server offline for too long flow
+        var serverOfflineTime = _dateTimeProvider.UtcNow - _zamzaServerUnavailableSince.Value;
+        if (serverOfflineTime > _consumerConfig.Ping.MaxOfflineTime)
+        {
+            _logger.LogCritical("Zamza server is offline. Stopping the consumer");
+            _state.ChangeState(ConsumerStateEnum.Stopped);
+        }
     }
 
     private async Task ClaimPartitionOwnership(
-        ConsumptionControllerStateEnum desiredNextState,
+        ConsumerStateEnum desiredNextState,
         CancellationToken cancellationToken)
     {
         var partitionsToClaim = _kafkaConsumerFacade.AssignedPartitions;
@@ -169,7 +186,7 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
         catch (ZamzaException zamzaException) when (zamzaException.Code is ZamzaErrorCode.ServerUnavailable)
         {
             _logger.LogError("Zamza server is not available, switching to ping");
-            _state.ChangeState(newState: ConsumptionControllerStateEnum.ZamzaServerNotAvailable);
+            _state.ChangeState(newState: ConsumerStateEnum.ZamzaServerNotAvailable);
             return;
         }
         catch (Exception exception)
@@ -196,7 +213,7 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
         var messages = _kafkaConsumerFacade.Consume();
         
         // During the consume from Kafka, a rebalance handler may have been called.
-        if (_state.CurrentState is ConsumptionControllerStateEnum.PartitionOwnershipClaimRequired)
+        if (_state.CurrentState is ConsumerStateEnum.PartitionOwnershipClaimRequired)
         {
             return;
         }
@@ -231,7 +248,7 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
         catch (ZamzaException exception) when (exception.Code is ZamzaErrorCode.ServerUnavailable)
         {
             _logger.LogError("Zamza server is not available, switching to ping");
-            _state.ChangeState(ConsumptionControllerStateEnum.ZamzaServerNotAvailable);
+            _state.ChangeState(ConsumerStateEnum.ZamzaServerNotAvailable);
             return;
         }
         catch (Exception exception)
@@ -244,7 +261,7 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
 
         if (commitResult.PartitionsWithIrrelevantOwnership.Count > 0)
         {
-            _state.ChangeState(ConsumptionControllerStateEnum.PartitionOwnershipClaimRequired);
+            _state.ChangeState(ConsumerStateEnum.PartitionOwnershipClaimRequired);
         }
 
         var faultyPartitions = commitResult.PartitionsWithIrrelevantOwnership
@@ -295,7 +312,7 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
         }
         catch (ZamzaException zamzaException) when (zamzaException.Code is ZamzaErrorCode.ServerUnavailable)
         {
-            _state.ChangeState(newState: ConsumptionControllerStateEnum.ZamzaServerNotAvailable);
+            _state.ChangeState(newState: ConsumerStateEnum.ZamzaServerNotAvailable);
             _logger.LogError("Zamza server is not available, switching to ping");
             return;
         }
@@ -309,7 +326,7 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
 
         if (fetchResult.IsFetchSuccessful is false)
         {
-            _state.ChangeState(ConsumptionControllerStateEnum.PartitionOwnershipClaimRequired);
+            _state.ChangeState(ConsumerStateEnum.PartitionOwnershipClaimRequired);
             return;
         }
 
@@ -343,7 +360,7 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
         catch (ZamzaException zamzaException) when (zamzaException.Code is ZamzaErrorCode.ServerUnavailable)
         {
             _logger.LogError("Zamza server is not available, switching to ping");
-            _state.ChangeState(ConsumptionControllerStateEnum.ZamzaServerNotAvailable);
+            _state.ChangeState(ConsumerStateEnum.ZamzaServerNotAvailable);
             return;
         }
         catch (Exception exception)
@@ -356,7 +373,7 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
 
         if (commitResult.PartitionsWithIrrelevantOwnership.Count > 0)
         {
-            _state.ChangeState(ConsumptionControllerStateEnum.PartitionOwnershipClaimRequired);
+            _state.ChangeState(ConsumerStateEnum.PartitionOwnershipClaimRequired);
         }
     }
 

@@ -70,7 +70,8 @@ public sealed class ZamzaConsumerBuilder<TKey, TValue, TProcessor>
             kafkaConsumerFacade,
             zamzaServerFacade,
             messageProcessor,
-            serviceProvider.GetRequiredService<ILogger<ZamzaConsumer<TKey, TValue>>>());
+            serviceProvider.GetRequiredService<ILogger<ZamzaConsumer<TKey, TValue>>>(),
+            dateTimeProvider);
     }
     
     private ZamzaConsumerBuilder(MainInfoConfig mainInfoConfig)

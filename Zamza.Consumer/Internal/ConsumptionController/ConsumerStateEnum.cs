@@ -1,6 +1,6 @@
 namespace Zamza.Consumer.Internal.ConsumptionController;
 
-internal enum ConsumptionControllerStateEnum
+internal enum ConsumerStateEnum
 {
     Stopped,
     ZamzaServerNotAvailable,
