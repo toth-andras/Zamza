@@ -275,7 +275,7 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
             _state.ChangeState(ConsumerStateEnum.PartitionOwnershipClaimRequired);
         }
 
-        var faultyPartitions = commitResult.PartitionsWithIrrelevantOwnership
+        var irrelevantPartitions = commitResult.PartitionsWithIrrelevantOwnership
             .Select(partition => (Topic: partition.Topic, Partition: partition.Partition))
             .ToHashSet();
         
@@ -283,15 +283,35 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
             .ProcessedMessages
             .Concat(processingResult.MessagesWithRetryableFailure.Select(message => message.Message))
             .Concat(processingResult.MessagesWithCompleteFailure.Select(message => message.Message))
-            .Where(message => faultyPartitions.Contains((message.Topic, message.Partition)) is false)
+            .Where(message => irrelevantPartitions.Contains((message.Topic, message.Partition)) is false)
             .GroupBy(message => (message.Topic, message.Partition))
             .Select(group => new TopicPartitionOffset(
                 group.Key.Topic,
                 group.Key.Partition,
                 group.Max(message => message.Offset) + 1))
             .ToArray();
+
+        var offsetsToSeekBack = processingResult
+            .ProcessedMessages
+            .Concat(processingResult.MessagesWithRetryableFailure.Select(message => message.Message))
+            .Concat(processingResult.MessagesWithCompleteFailure.Select(message => message.Message))
+            .Where(message => irrelevantPartitions.Contains((message.Topic, message.Partition)))
+            .GroupBy(message => (message.Topic, message.Partition))
+            .Select(group => new TopicPartitionOffset(
+                group.Key.Topic, 
+                group.Key.Partition, 
+                group.Min(message => message.Offset)))
+            .ToArray();
         
         _kafkaConsumerFacade.Commit(offsetsToCommit);
+        _kafkaConsumerFacade.Commit(offsetsToSeekBack);
+
+        if (_logger.IsEnabled(LogLevel.Trace))
+        {
+            _logger.LogDebug(
+                "Could not commit messages from partitions (topic, partition): {Partitions}",
+                irrelevantPartitions);
+        }
     }
 
     private async Task ProcessZamza(CancellationToken cancellationToken)
