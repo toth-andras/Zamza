@@ -8,4 +8,5 @@ public sealed record CommitRequest(
     IReadOnlyCollection<CommitedPartition> Partitions,
     IReadOnlyCollection<ProcessedMessage> ProcessedMessages,
     IReadOnlyCollection<RetryableMessage> RetryableMessages,
-    IReadOnlyCollection<FailedMessage> FailedMessages);
+    IReadOnlyCollection<FailedMessage> FailedMessages,
+    DateTimeOffset TimstampUtc);

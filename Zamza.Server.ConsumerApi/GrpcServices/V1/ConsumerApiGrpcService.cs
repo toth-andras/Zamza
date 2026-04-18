@@ -59,7 +59,7 @@ public sealed class ConsumerApiGrpcService : ConsumerApiV1.ConsumerApiV1Base
         CommitRequest request,
         ServerCallContext context)
     {
-        var requestModel = request.ToModel();
+        var requestModel = request.ToModel(_dateTimeProvider.GetUtcNow());
         
         var responseModel = await _commitService.Commit(requestModel, context.CancellationToken);
 

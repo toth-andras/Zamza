@@ -17,23 +17,24 @@ namespace Zamza.Server.ConsumerApi.GrpcServices.V1.Mapping;
 
 internal static class CommitMappingExtensions
 {
-    public static ModelRequest ToModel(this GrpcRequest request)
+    public static ModelRequest ToModel(this GrpcRequest request, DateTimeOffset timestampUtc)
     {
         return new ModelRequest(
             request.ConsumerId,
             request.ConsumerGroup,
             request.OwnershipsForProcessedPartitions
                 .Select(partitionOwnership => partitionOwnership.ToModel())
-                .ToList(),
+                .ToArray(),
             request.ProcessedMessages
                 .Select(message => message.ToModel())
-                .ToList(),
+                .ToArray(),
             request.RetryableMessages
                 .Select(message => message.ToModel())
-                .ToList(),
+                .ToArray(),
             request.FailedMessages
                 .Select(message => message.ToModel())
-                .ToList());
+                .ToArray(),
+            timestampUtc);
     }
 
     public static GrpcCommitResponse ToGrpc(this ModelCommitResponse response)

@@ -3,12 +3,14 @@ using Zamza.Server.Application.ConsumerApi.Commit.Models;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
 using Zamza.Server.DataAccess.Repositories.CommonModels;
+using Zamza.Server.DataAccess.Repositories.ConsumerHeartbeatRepository;
 using Zamza.Server.DataAccess.Repositories.DLQRepository;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.Models;
 using Zamza.Server.DataAccess.Repositories.RetryQueueRepository;
 using Zamza.Server.Models.ConsumerApi.Commit;
 using Zamza.Server.Models.ConsumerApi.Common;
+using Zamza.Server.Models.ConsumerApi.Monitoring;
 using Zamza.Server.Models.Exceptions;
 
 namespace Zamza.Server.Application.ConsumerApi.Commit;
@@ -19,6 +21,7 @@ internal sealed class CommitService : ICommitService
     private readonly IPartitionOwnershipRepository _partitionOwnershipRepository;
     private readonly IRetryQueueRepository _retryQueueRepository;
     private readonly IDLQRepository _dlqRepository;
+    private readonly IConsumerHeartbeatRepository _consumerHeartbeatRepository;
 
     public CommitService(
         IDbConnectionsManager dbConnectionsManager,
@@ -36,6 +39,8 @@ internal sealed class CommitService : ICommitService
         CommitRequest request,
         CancellationToken cancellationToken)
     {
+        await SaveConsumerHeartbeat(request, cancellationToken);
+        
         VerifyAllCommitedPartitionsAreStated(request);
         
         await using var transaction = await _dbConnectionsManager.BeginTransaction(
@@ -94,6 +99,18 @@ internal sealed class CommitService : ICommitService
                 .ToList());
     }
 
+    private async Task SaveConsumerHeartbeat(
+        CommitRequest request,
+        CancellationToken cancellationToken)
+    {
+        var heartbeat = new ConsumerHeartbeat(
+            request.ConsumerId,
+            request.ConsumerGroup,
+            request.TimstampUtc);
+        
+        await _consumerHeartbeatRepository.SaveHeartbeat(heartbeat, cancellationToken);
+    }
+    
     private static void VerifyAllCommitedPartitionsAreStated(CommitRequest request)
     {
         var statedPartitions = new HashSet<(string Topic, int Partition)>(request.Partitions.Count);
