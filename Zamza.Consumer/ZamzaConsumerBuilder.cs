@@ -9,6 +9,7 @@ using Zamza.Consumer.Internal.KafkaConsumerFacade;
 using Zamza.Consumer.Internal.MessageProcessing;
 using Zamza.Consumer.Internal.Utils.DateTimeProvider;
 using Zamza.Consumer.Internal.ZamzaServer;
+using Zamza.Consumer.Options;
 
 namespace Zamza.Consumer;
 
@@ -19,8 +20,8 @@ public sealed class ZamzaConsumerBuilder<TKey, TValue, TProcessor>
     private ZamzaFetchConfig _zamzaFetchConfig;
     private MessageProcessorConfig<TKey, TValue> _messageProcessorConfig;
     private PingConfig _pingConfig;
-    
-    public static ZamzaConsumerBuilder<TKey, TValue, TProcessor> Setup(
+
+    public ZamzaConsumerBuilder(
         ConsumerConfig kafkaConsumerConfig,
         Uri zamzaServerUri,
         IEnumerable<string> topics)
@@ -31,15 +32,17 @@ public sealed class ZamzaConsumerBuilder<TKey, TValue, TProcessor>
 
         KafkaConsumerConfigValidator.Validate(kafkaConsumerConfig);
         
-        var mainInfoConfig = new MainInfoConfig(
+        _mainInfoConfig = new MainInfoConfig(
             Guid.CreateVersion7().ToString(),
             kafkaConsumerConfig.GroupId,
             kafkaConsumerConfig,
             zamzaServerUri,
             topics);
-
-        return new ZamzaConsumerBuilder<TKey, TValue, TProcessor>(mainInfoConfig);
-    }
+        
+        _zamzaFetchConfig = ZamzaFetchConfig.Default;
+        _messageProcessorConfig = MessageProcessorConfig<TKey, TValue>.Default;
+        _pingConfig = PingConfig.Default;
+    } 
 
     public IZamzaConsumer Build(IServiceProvider serviceProvider)
     {
@@ -73,13 +76,41 @@ public sealed class ZamzaConsumerBuilder<TKey, TValue, TProcessor>
             serviceProvider.GetRequiredService<ILogger<ZamzaConsumer<TKey, TValue>>>(),
             dateTimeProvider);
     }
-    
-    private ZamzaConsumerBuilder(MainInfoConfig mainInfoConfig)
+
+    public ZamzaConsumerBuilder<TKey, TValue, TProcessor> ConfigureZamzaFetch(ZamzaFetchOptions options)
     {
-        _mainInfoConfig = mainInfoConfig;
+        ArgumentNullException.ThrowIfNull(options);
         
-        _zamzaFetchConfig = ZamzaFetchConfig.Default;
-        _messageProcessorConfig = MessageProcessorConfig<TKey, TValue>.Default;
-        _pingConfig = PingConfig.Default;
+        _zamzaFetchConfig = new ZamzaFetchConfig(
+            options.KafkaConsumesPerZamzaFetch,
+            options.FetchLimit);
+
+        return this;
+    }
+
+    public ZamzaConsumerBuilder<TKey, TValue, TProcessor> ConfigureMessageProcessing(
+        MessageProcessingOptions<TKey, TValue> options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        
+        _messageProcessorConfig = new MessageProcessorConfig<TKey, TValue>(
+            options.MaxRetriesCount,
+            options.MinRetriesGap,
+            options.ProcessingPeriod,
+            options.RetryGapEvaluator);
+
+        return this;
+    }
+
+    public ZamzaConsumerBuilder<TKey, TValue, TProcessor> ConfigureRecovery(
+        RecoveryOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        _pingConfig = new PingConfig(
+            options.PingInterval,
+            options.MaxOfflineTime);
+        
+        return this;
     }
 }
