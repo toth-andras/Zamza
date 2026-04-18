@@ -2,6 +2,7 @@ using FluentMigrator.Runner;
 using Microsoft.Extensions.DependencyInjection;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement;
 using Zamza.Server.DataAccess.Common.DapperConfiguration;
+using Zamza.Server.DataAccess.Repositories.ConsumerHeartbeatRepository;
 using Zamza.Server.DataAccess.Repositories.DLQRepository;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository;
 using Zamza.Server.DataAccess.Repositories.RetryQueueRepository;
@@ -23,6 +24,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPartitionOwnershipRepository, PartitionOwnershipRepository>();
         services.AddScoped<IRetryQueueRepository, RetryQueueRepository>();
         services.AddScoped<IDLQRepository, DLQRepository>();
+        services.AddScoped<IConsumerHeartbeatRepository, ConsumerHeartbeatRepository>();
         
         return services;
     }
