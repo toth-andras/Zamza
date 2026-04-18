@@ -82,7 +82,6 @@ internal sealed class KafkaConsumerFacade<TKey, TValue> : IKafkaConsumerFacade<T
     public event Action? OnConsumerGroupRebalance;
     private void TriggerOnConsumerGroupRebalance()
     {
-        Console.WriteLine("=================== Kafka rebalance ===================");
         OnConsumerGroupRebalance?.Invoke();
     }
 }

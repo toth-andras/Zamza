@@ -1,7 +1,7 @@
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using Zamza.Consumer.Internal.Configs;
-using Zamza.Consumer.Internal.ConsumptionController;
+using Zamza.Consumer.Internal.ConsumerState;
 using Zamza.Consumer.Internal.KafkaConsumerFacade;
 using Zamza.Consumer.Internal.MessageProcessing;
 using Zamza.Consumer.Internal.Models;
@@ -14,7 +14,7 @@ namespace Zamza.Consumer.Internal;
 
 internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
 {
-    private readonly ConsumerState _state;
+    private readonly ConsumerState.ConsumerState _state;
     private readonly PingRequest _pingRequest;
     private DateTime? _zamzaServerUnavailableSince; 
 
@@ -46,7 +46,7 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
         _logger = logger;
         _dateTimeProvider = dateTimeProvider;
         
-        _state = new ConsumerState();
+        _state = new ConsumerState.ConsumerState();
         _pingRequest = new PingRequest(
             _consumerConfig.MainInfo.ConsumerId,
             _consumerConfig.MainInfo.ConsumerGroup);
@@ -117,6 +117,7 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
 
     private void OnConsumerGroupRebalance()
     {
+        _logger.LogInformation("Kafka consumer group rebalance occured. Starting rebalance handling.");
         _state.ChangeState(newState: ConsumerStateEnum.PartitionOwnershipClaimRequired);
     }
     
@@ -390,7 +391,7 @@ internal sealed class ZamzaConsumer<TKey, TValue> : IZamzaConsumer
         catch (ZamzaException zamzaException) when (zamzaException.Code is ZamzaErrorCode.ServerUnavailable)
         {
             _state.ChangeState(newState: ConsumerStateEnum.ZamzaServerNotAvailable);
-            _logger.LogError("Zamza server is not available, switching to ping");
+            _logger.LogError("Zamza.Server is not available, switching to ping");
             return;
         }
         catch (Exception exception)

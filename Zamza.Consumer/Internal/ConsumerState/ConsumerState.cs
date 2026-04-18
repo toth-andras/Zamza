@@ -1,4 +1,4 @@
-namespace Zamza.Consumer.Internal.ConsumptionController;
+namespace Zamza.Consumer.Internal.ConsumerState;
 
 internal sealed class ConsumerState
 {
