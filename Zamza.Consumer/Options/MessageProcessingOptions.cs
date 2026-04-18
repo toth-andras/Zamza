@@ -22,7 +22,7 @@ public sealed class MessageProcessingOptions<TKey, TValue>
     public TimeSpan? ProcessingPeriod { get; init; } = MessageProcessorConfig<TKey, TValue>.Default.ProcessingPeriod;
     
     /// <summary>
-    /// Evaluates the delay before the next reprocessing attempt.
+    /// Evaluates the minimal delay before the next reprocessing attempt.
     /// </summary>
     /// <remarks>
     /// The evaluator is called after every reprocessing attempt before commiting results to Zamza.Server.
