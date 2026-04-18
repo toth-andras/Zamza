@@ -116,4 +116,12 @@ internal sealed class DLQRepository : IDLQRepository
             .Select(dto => dto.ToModel())
             .ToList();
     }
+
+    public async Task<long> GetDLQSize(CancellationToken cancellationToken)
+    {
+        var command = GetDLQSizeSqlCommand.BuildCommandDefinition(cancellationToken);
+        
+        await using var connection = await _dbConnectionsManager.CreateConnection(cancellationToken);
+        return await connection.QueryFirstWithExceptionHandling<long>(command);
+    }
 }

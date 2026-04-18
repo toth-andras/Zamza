@@ -29,4 +29,6 @@ public interface IRetryQueueRepository
         string consumerGroup,
         IReadOnlyCollection<RetryableMessage> messages,
         CancellationToken cancellationToken);
+    
+    Task<long> GetRetryQueueSize(CancellationToken cancellationToken);
 }

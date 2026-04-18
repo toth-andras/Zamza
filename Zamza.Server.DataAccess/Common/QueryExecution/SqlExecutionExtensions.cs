@@ -37,6 +37,20 @@ internal static class SqlExecutionExtensions
             throw ConvertException(exception);
         }
     }
+
+    public static async Task<T> QueryFirstWithExceptionHandling<T>(
+        this IDbConnection connection,
+        CommandDefinition command)
+    {
+        try
+        {
+            return await connection.QueryFirstAsync<T>(command);
+        }
+        catch (Exception exception)
+        {
+            throw ConvertException(exception);
+        }
+    }
     
     private static Exception ConvertException(Exception exception)
     {

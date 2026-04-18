@@ -119,4 +119,12 @@ internal sealed class RetryQueueRepository : IRetryQueueRepository
         
         await transaction.Connection.ExecuteWithExceptionHandling(command);
     }
+
+    public async Task<long> GetRetryQueueSize(CancellationToken cancellationToken)
+    {
+        var command = GetRetryQueueSizeSqlCommand.BuildCommandDefinition(cancellationToken);
+        
+        await using var connection = await _connectionsManager.CreateConnection(cancellationToken);
+        return await connection.QueryFirstWithExceptionHandling<long>(command);
+    }
 }

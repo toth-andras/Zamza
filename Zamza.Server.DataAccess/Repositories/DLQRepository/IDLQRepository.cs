@@ -33,4 +33,6 @@ public interface IDLQRepository
         long startId,
         int limit,
         CancellationToken cancellationToken);
+
+    Task<long> GetDLQSize(CancellationToken cancellationToken);
 }
