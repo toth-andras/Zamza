@@ -21,6 +21,7 @@ public static class ServiceCollectionExtensions
     private static GrpcServiceOptions AddInterceptors(this GrpcServiceOptions options)
     {
         options.Interceptors.Add<ExceptionInterceptor>();
+        options.Interceptors.Add<MetricsInterceptor>();
         
         return options;
     }

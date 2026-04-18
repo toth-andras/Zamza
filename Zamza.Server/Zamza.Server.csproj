@@ -7,4 +7,9 @@
       <ProjectReference Include="..\Zamza.Server.UserApi\Zamza.Server.UserApi.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="prometheus-net" />
+      <PackageReference Include="prometheus-net.AspNetCore" />
+    </ItemGroup>
+
 </Project>

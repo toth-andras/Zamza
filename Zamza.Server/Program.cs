@@ -1,9 +1,12 @@
+using Zamza.Server;
 using Zamza.Server.Application;
 using Zamza.Server.ConsumerApi;
 using Zamza.Server.DataAccess;
 using Zamza.Server.UserApi;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddMetricsInfrastructure();
 
 builder.Services.AddDataAccessLayer();
 builder.Services.AddApplicationLayer();
