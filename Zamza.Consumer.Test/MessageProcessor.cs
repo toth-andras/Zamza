@@ -8,9 +8,10 @@ public class MessageProcessor : IMessageCustomProcessor<string, string>
     {
         var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
         var source = message.IsFromKafka ? "Kafka" : "Zamza.Server";
+        var retryNumber = message.IsFromKafka ? "" : $"Retry number: {message.RetriesCount + 1}";
         
         Console.WriteLine(
-            $"[{timestamp}] Consumed message: {message.Value}. Source: {source}. Retries count: {message.RetriesCount}");
+            $"[{timestamp}] Consumed message: {message.Value}. Source: {source}. {retryNumber}");
 
         return Task.FromResult(ProcessResult.RetryableFail);
     }
