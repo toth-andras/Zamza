@@ -3,25 +3,30 @@ using Microsoft.Extensions.Logging;
 using Zamza.Server.Application.ConsumerApi.ClaimPartitionOwnership.Models;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
+using Zamza.Server.DataAccess.Repositories.ConsumerHeartbeatRepository;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository.Models;
 using Zamza.Server.Models.ConsumerApi.ClaimPartitionOwnership;
+using Zamza.Server.Models.ConsumerApi.Monitoring;
 
 namespace Zamza.Server.Application.ConsumerApi.ClaimPartitionOwnership;
 
 internal sealed class ClaimPartitionOwnershipService : IClaimPartitionOwnershipService
 {
     private readonly IDbConnectionsManager  _dbConnectionsManager;
-    private readonly IPartitionOwnershipRepository  _partitionOwnershipRepository;
+    private readonly IPartitionOwnershipRepository _partitionOwnershipRepository;
+    private readonly IConsumerHeartbeatRepository _consumerHeartbeatRepository;
     private readonly ILogger<ClaimPartitionOwnershipService>  _logger;
 
     public ClaimPartitionOwnershipService(
         IDbConnectionsManager dbConnectionsManager,
         IPartitionOwnershipRepository partitionOwnershipRepository,
+        IConsumerHeartbeatRepository consumerHeartbeatRepository,
         ILogger<ClaimPartitionOwnershipService> logger)
     {
         _dbConnectionsManager = dbConnectionsManager;
         _partitionOwnershipRepository = partitionOwnershipRepository;
+        _consumerHeartbeatRepository = consumerHeartbeatRepository;
         _logger = logger;
     }
 
@@ -29,6 +34,8 @@ internal sealed class ClaimPartitionOwnershipService : IClaimPartitionOwnershipS
         ClaimPartitionOwnershipRequest request,
         CancellationToken cancellationToken)
     {
+        await SaveConsumerHeartbeat(request, cancellationToken);
+        
         await using var transaction = await _dbConnectionsManager.BeginTransaction(
             IsolationLevel.ReadCommitted,
             cancellationToken);
@@ -76,6 +83,18 @@ internal sealed class ClaimPartitionOwnershipService : IClaimPartitionOwnershipS
         return new ClaimPartitionOwnershipResponse(
             consumerGroupPartitionOwnerships,
             OwnershipClaimResult.Ok);
+    }
+
+    private async Task SaveConsumerHeartbeat(
+        ClaimPartitionOwnershipRequest request,
+        CancellationToken cancellationToken)
+    {
+        var heartbeat = new ConsumerHeartbeat(
+            request.PartitionClaims.ConsumerId,
+            request.PartitionClaims.ConsumerGroup,
+            request.PartitionClaims.TimestampUtc);
+
+        await _consumerHeartbeatRepository.SaveHeartbeat(heartbeat, cancellationToken);
     }
 
     private async Task LockPartitions(
