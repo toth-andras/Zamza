@@ -27,11 +27,13 @@ internal sealed class CommitService : ICommitService
         IDbConnectionsManager dbConnectionsManager,
         IPartitionOwnershipRepository partitionOwnershipRepository,
         IRetryQueueRepository retryQueueRepository,
+        IConsumerHeartbeatRepository  consumerHeartbeatRepository,
         IDLQRepository dlqRepository)
     {
         _dbConnectionsManager = dbConnectionsManager;
         _partitionOwnershipRepository = partitionOwnershipRepository;
         _retryQueueRepository = retryQueueRepository;
+        _consumerHeartbeatRepository = consumerHeartbeatRepository;
         _dlqRepository = dlqRepository;
     }
 
