@@ -52,6 +52,20 @@ internal static class SqlExecutionExtensions
         }
     }
     
+    public static async Task<T?> QueryFirstOrDefaultWithExceptionHandling<T>(
+        this IDbConnection connection,
+        CommandDefinition command)
+    {
+        try
+        {
+            return await connection.QueryFirstOrDefaultAsync<T>(command);
+        }
+        catch (Exception exception)
+        {
+            throw ConvertException(exception);
+        }
+    }
+    
     private static Exception ConvertException(Exception exception)
     {
         if (exception is SqlException {Number: TimeoutErrorCode})

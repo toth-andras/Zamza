@@ -4,6 +4,7 @@ using Zamza.Server.DataAccess.Common.ConnectionsManagement;
 using Zamza.Server.DataAccess.Common.DapperConfiguration;
 using Zamza.Server.DataAccess.Repositories.ConsumerHeartbeatRepository;
 using Zamza.Server.DataAccess.Repositories.DLQRepository;
+using Zamza.Server.DataAccess.Repositories.InstanceLeadershipRepository;
 using Zamza.Server.DataAccess.Repositories.PartitionOwnershipRepository;
 using Zamza.Server.DataAccess.Repositories.RetryQueueRepository;
 using Zamza.Server.Models.Exceptions;
@@ -25,6 +26,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRetryQueueRepository, RetryQueueRepository>();
         services.AddScoped<IDLQRepository, DLQRepository>();
         services.AddScoped<IConsumerHeartbeatRepository, ConsumerHeartbeatRepository>();
+        services.AddTransient<IInstanceLeadershipRepository, InstanceLeadershipRepository>();
         
         return services;
     }
