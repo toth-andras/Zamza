@@ -14,7 +14,7 @@ namespace Zamza.Server.ConsumerApi.GrpcServices.V1.Mapping;
 
 internal static class FetchMappingExtensions
 {
-    public static ModelRequest ToModel(this GrpcRequest grpcRequest)
+    public static ModelRequest ToModel(this GrpcRequest grpcRequest, DateTimeOffset timestampUtc)
     {
         return new ModelRequest(
             grpcRequest.ConsumerId,
@@ -22,7 +22,8 @@ internal static class FetchMappingExtensions
             grpcRequest.Partitions
                 .Select(partition => partition.ToModel())
                 .ToList(),
-            grpcRequest.Limit);
+            grpcRequest.Limit,
+            timestampUtc);
     }
 
     public static GrpcResponse ToGrpc(this ModelResponse response)

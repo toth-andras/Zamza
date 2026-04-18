@@ -48,7 +48,7 @@ public sealed class ConsumerApiGrpcService : ConsumerApiV1.ConsumerApiV1Base
         FetchRequest request,
         ServerCallContext context)
     {
-        var requestModel = request.ToModel();
+        var requestModel = request.ToModel(_dateTimeProvider.GetUtcNow());
         
         var responseModel = await _fetchService.Fetch(requestModel, context.CancellationToken);
 
