@@ -1,4 +1,4 @@
-namespace Zamza.Server.Application.Common;
+namespace Zamza.Server.Application.Observability;
 
 public static class ObservabilityContstants
 {

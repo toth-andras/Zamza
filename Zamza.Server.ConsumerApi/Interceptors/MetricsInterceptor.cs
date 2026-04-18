@@ -2,7 +2,7 @@ using System.Diagnostics;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Prometheus;
-using Zamza.Server.Application.Common;
+using Zamza.Server.Application.Observability;
 
 namespace Zamza.Server.ConsumerApi.Interceptors;
 
