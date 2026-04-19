@@ -1,4 +1,5 @@
 using System.Data;
+using System.Data.Common;
 using Dapper;
 using Microsoft.Data.SqlClient;
 using Zamza.Server.Models.Exceptions;
@@ -59,6 +60,25 @@ internal static class SqlExecutionExtensions
         try
         {
             return await connection.QueryFirstOrDefaultAsync<T>(command);
+        }
+        catch (Exception exception)
+        {
+            throw ConvertException(exception);
+        }
+    }
+
+    public static IAsyncEnumerable<T> QueryUnbufferedWithExceptionHandling<T>(
+        this DbConnection connection,
+        string sql,
+        object? parameters,
+        int timeout)
+    {
+        try
+        {
+            return connection.QueryUnbufferedAsync<T>(
+                sql: sql,
+                param: parameters,
+                commandTimeout: timeout);
         }
         catch (Exception exception)
         {

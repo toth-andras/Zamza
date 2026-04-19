@@ -31,4 +31,6 @@ public interface IPartitionOwnershipRepository
         string consumerGroup,
         DateTimeOffset timestampUtc,
         CancellationToken cancellationToken);
+
+    IAsyncEnumerable<ConsumerGroupPartitionOwnership> List(CancellationToken cancellationToken);
 }

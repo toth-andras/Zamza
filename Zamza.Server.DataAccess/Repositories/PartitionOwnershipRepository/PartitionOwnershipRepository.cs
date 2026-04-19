@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement;
 using Zamza.Server.DataAccess.Common.ConnectionsManagement.Transactions;
 using Zamza.Server.DataAccess.Common.QueryExecution;
@@ -129,5 +130,22 @@ internal sealed class PartitionOwnershipRepository : IPartitionOwnershipReposito
         
         await using var connection = await _dbConnectionsManager.CreateConnection(cancellationToken);
         await connection.ExecuteWithExceptionHandling(command);
+    }
+
+    public async IAsyncEnumerable<ConsumerGroupPartitionOwnership> List(
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        await using var connection = await _dbConnectionsManager.CreateConnection(cancellationToken);
+
+        var partitionsEnumerable = connection.QueryUnbufferedWithExceptionHandling<PartitionOwnershipDto>(
+            ListConsumerOwnershipsSqlCommand.Sql,
+            parameters: null,
+            ListConsumerOwnershipsSqlCommand.TimeoutInSecond);
+
+        await foreach (var partitionOwnershipDto in partitionsEnumerable)
+        {
+            var ownership = partitionOwnershipDto.ToModel();
+            yield return ownership;
+        }
     }
 }
