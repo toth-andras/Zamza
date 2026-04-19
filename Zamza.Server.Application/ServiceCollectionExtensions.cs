@@ -3,6 +3,7 @@ using Zamza.Server.Application.ConsumerApi.ClaimPartitionOwnership;
 using Zamza.Server.Application.ConsumerApi.Commit;
 using Zamza.Server.Application.ConsumerApi.Fetch;
 using Zamza.Server.Application.ConsumerApi.Leave;
+using Zamza.Server.Application.Observability.BackgroundTasks.MessageQueueSize;
 using Zamza.Server.Application.UserApi.DLQ;
 using Zamza.Server.Application.UserApi.Storage;
 
@@ -14,6 +15,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddConsumerApi();
         services.AddUserApi();
+        services.AddBackgroundTasks();
         
         return services;
     }
@@ -32,6 +34,13 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IStorageService, StorageService>();
         services.AddScoped<IDLQService, DLQService>();
+        
+        return services;
+    }
+
+    private static IServiceCollection AddBackgroundTasks(this IServiceCollection services)
+    {
+        services.AddHostedService<MessageQueuesSizeBackgroundTask>();
         
         return services;
     }
