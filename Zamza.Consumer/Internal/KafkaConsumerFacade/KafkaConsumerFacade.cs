@@ -58,15 +58,22 @@ internal sealed class KafkaConsumerFacade<TKey, TValue> : IKafkaConsumerFacade<T
             processingDeadline = consumeTimestamp.Add(_config.MessageProcessor.ProcessingPeriod.Value);
         }
 
-        var messages = Enumerable.Range(0, 5)
-            .Select(_ => _consumer.Consume(TimeSpan.FromMilliseconds(100)))
-            .Where(res => res is not null)
-            .Select(res => res.ToZamzaMessage(
-                _config.MessageProcessor.MaxRetriesCount,
-                processingDeadline))
-            .ToArray();
-        
-        return messages;
+        try
+        {
+            var messages = Enumerable.Range(0, 5)
+                .Select(_ => _consumer.Consume(TimeSpan.FromMilliseconds(100)))
+                .Where(res => res is not null)
+                .Select(res => res.ToZamzaMessage(
+                    _config.MessageProcessor.MaxRetriesCount,
+                    processingDeadline))
+                .ToArray();
+            
+            return messages;
+        }
+        catch (Exception exception)
+        {
+            return [];
+        }
     }
 
     public void Commit(IReadOnlyCollection<TopicPartitionOffset> offsets)
@@ -77,7 +84,6 @@ internal sealed class KafkaConsumerFacade<TKey, TValue> : IKafkaConsumerFacade<T
             _committedOffsets[(offset.Topic, offset.Partition.Value)] = offset.Offset.Value;
         }
     }
-
 
     public event Action? OnConsumerGroupRebalance;
     private void TriggerOnConsumerGroupRebalance()
