@@ -24,8 +24,8 @@ internal sealed class TryBecomeLeaderSqlCommand
             instance_id = @{nameof(Parameters.InstanceId)},
             leadership_deadline = excluded.leadership_deadline
         where
-            instance_id = @{nameof(Parameters.InstanceId)} or
-            leadership_deadline < now()
+            zamza.instance_leadership.instance_id = @{nameof(Parameters.InstanceId)} or
+            zamza.instance_leadership.leadership_deadline < now()
         returning key;
     """;
 

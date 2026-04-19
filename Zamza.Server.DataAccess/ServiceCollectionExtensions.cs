@@ -26,7 +26,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRetryQueueRepository, RetryQueueRepository>();
         services.AddScoped<IDLQRepository, DLQRepository>();
         services.AddScoped<IConsumerHeartbeatRepository, ConsumerHeartbeatRepository>();
-        services.AddTransient<IInstanceLeadershipRepository, InstanceLeadershipRepository>();
+        services.AddSingleton<IInstanceLeadershipRepository, InstanceLeadershipRepository>();
         
         return services;
     }

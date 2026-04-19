@@ -8,7 +8,7 @@ public sealed class _20260419022000_InstanceLeadership_UniqueIndex : SqlMigratio
     protected override string SqlUp =>
     """
         create unique index if not exists idx_instance_leadership_unique
-        on zamza.instance_leadership (key, instance_id);
+        on zamza.instance_leadership (key);
     """;
 
     protected override string SqlDown => "drop index if exists idx_instance_leadership_unique;";

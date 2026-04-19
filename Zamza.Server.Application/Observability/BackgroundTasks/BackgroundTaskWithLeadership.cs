@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Prometheus;
 using Zamza.Server.DataAccess.Repositories.InstanceLeadershipRepository;
 
 namespace Zamza.Server.Application.Observability.BackgroundTasks;
@@ -9,8 +10,15 @@ internal abstract class BackgroundTaskWithLeadership : BackgroundService
     private readonly IInstanceLeadershipRepository _leadershipRepository;
     private readonly ILogger<BackgroundTaskWithLeadership> _logger;
     
+    private static readonly Gauge LeadershipGauge = Metrics.CreateGauge(
+        "zamza_background_tasks_leadership",
+        "Shows what instance is currently a leader for the background task",
+        new GaugeConfiguration
+        {
+            LabelNames = ["task_name", "server_instance"]
+        });
+    
     protected abstract string BackgroundTaskName { get; }
-    protected abstract Guid InstanceId { get; }
     protected abstract TimeSpan CycleTime { get; }
 
     protected BackgroundTaskWithLeadership(
@@ -39,23 +47,35 @@ internal abstract class BackgroundTaskWithLeadership : BackgroundService
     }
     private async Task ExecuteAsyncInner(CancellationToken cancellationToken)
     {
+        var instanceId = ObservabilityContstants.ServiceInstanceId;
+        const int backgroundLeadershipIsNotLeaderValue = 0;
+        const int backgroundLeadershipIsLeaderValue = 1;
+        
         while (!cancellationToken.IsCancellationRequested)
         {
             await Task.Delay(CycleTime, cancellationToken);
 
             var isLeader = await _leadershipRepository.TryBecomeLeader(
                 BackgroundTaskName,
-                InstanceId,
+                instanceId,
                 CycleTime.Add(TimeSpan.FromSeconds(3)), // To prioritize the current leader
                 cancellationToken);
 
             if (isLeader is false)
             {
+                LeadershipGauge
+                    .WithLabels([BackgroundTaskName, instanceId.ToString()])
+                    .Set(val: backgroundLeadershipIsNotLeaderValue); 
+                
                 _logger.LogDebug(
                     "Current instance is not leader for \'{TaskName}\' background task for the current cycle",
                     BackgroundTaskName);
                 continue;
             }
+            
+            LeadershipGauge
+                .WithLabels([BackgroundTaskName, instanceId.ToString()])
+                .Set(val: backgroundLeadershipIsLeaderValue); 
             
             _logger.LogDebug(
                 "Got leadership for \'{TaskName}\' background task for the current cycle",
