@@ -20,6 +20,7 @@ internal abstract class BackgroundTaskWithLeadership : BackgroundService
     
     protected abstract string BackgroundTaskName { get; }
     protected abstract TimeSpan CycleTime { get; }
+    protected Guid ServerInstanceId { get; } = ObservabilityContstants.ServiceInstanceId;
 
     protected BackgroundTaskWithLeadership(
         IInstanceLeadershipRepository leadershipRepository,
@@ -47,7 +48,6 @@ internal abstract class BackgroundTaskWithLeadership : BackgroundService
     }
     private async Task ExecuteAsyncInner(CancellationToken cancellationToken)
     {
-        var instanceId = ObservabilityContstants.ServiceInstanceId;
         const int backgroundLeadershipIsNotLeaderValue = 0;
         const int backgroundLeadershipIsLeaderValue = 1;
         
@@ -57,14 +57,14 @@ internal abstract class BackgroundTaskWithLeadership : BackgroundService
 
             var isLeader = await _leadershipRepository.TryBecomeLeader(
                 BackgroundTaskName,
-                instanceId,
+                ServerInstanceId,
                 CycleTime.Add(TimeSpan.FromSeconds(3)), // To prioritize the current leader
                 cancellationToken);
 
             if (isLeader is false)
             {
                 LeadershipGauge
-                    .WithLabels([BackgroundTaskName, instanceId.ToString()])
+                    .WithLabels([BackgroundTaskName, ServerInstanceId.ToString()])
                     .Set(val: backgroundLeadershipIsNotLeaderValue); 
                 
                 _logger.LogDebug(
@@ -74,7 +74,7 @@ internal abstract class BackgroundTaskWithLeadership : BackgroundService
             }
             
             LeadershipGauge
-                .WithLabels([BackgroundTaskName, instanceId.ToString()])
+                .WithLabels([BackgroundTaskName, ServerInstanceId.ToString()])
                 .Set(val: backgroundLeadershipIsLeaderValue); 
             
             _logger.LogDebug(

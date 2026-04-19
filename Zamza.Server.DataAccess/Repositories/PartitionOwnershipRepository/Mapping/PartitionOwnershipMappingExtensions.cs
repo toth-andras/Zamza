@@ -8,6 +8,7 @@ internal static class PartitionOwnershipMappingExtensions
     public static ConsumerGroupPartitionOwnership ToModel(this PartitionOwnershipDto dto)
     {
         return new ConsumerGroupPartitionOwnership(
+            dto.ConsumerGroup,
             dto.Topic,
             dto.Partition,
             dto.Epoch,

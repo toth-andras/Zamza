@@ -11,6 +11,7 @@ internal static class GetConsumerGroupPartitionOwnershipsSqlCommand
     private const string Sql = 
     $"""
         select
+            consumer_group  as {nameof(PartitionOwnershipDto.ConsumerGroup)},
             topic           as {nameof(PartitionOwnershipDto.Topic)},
             partition       as {nameof(PartitionOwnershipDto.Partition)},
             epoch           as {nameof(PartitionOwnershipDto.Epoch)},

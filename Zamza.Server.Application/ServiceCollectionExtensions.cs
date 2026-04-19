@@ -4,6 +4,7 @@ using Zamza.Server.Application.ConsumerApi.Commit;
 using Zamza.Server.Application.ConsumerApi.Fetch;
 using Zamza.Server.Application.ConsumerApi.Leave;
 using Zamza.Server.Application.Observability.BackgroundTasks.MessageQueueSize;
+using Zamza.Server.Application.Observability.BackgroundTasks.PartitionConsumptionStatus;
 using Zamza.Server.Application.UserApi.DLQ;
 using Zamza.Server.Application.UserApi.Storage;
 
@@ -41,6 +42,7 @@ public static class ServiceCollectionExtensions
     private static IServiceCollection AddBackgroundTasks(this IServiceCollection services)
     {
         services.AddHostedService<MessageQueuesSizeBackgroundTask>();
+        services.AddHostedService<PartitionConsumptionStatusBackgroundTask>();
         
         return services;
     }

@@ -7,6 +7,7 @@ public sealed record ConsumerGroupPartitionOwnership
 {
     public const long InitialPartitionOwnerEpoch = 0;
     
+    public string ConsumerGroup { get; }
     public string Topic { get;  }
     public int Partition { get; }
     public long OwnerEpoch { get; private set; }
@@ -14,15 +15,18 @@ public sealed record ConsumerGroupPartitionOwnership
     public DateTimeOffset TimestampUtc { get; private set; }
 
     public ConsumerGroupPartitionOwnership(
+        string consumerGroup,
         string topic,
         int partition,
         long ownerEpoch,
         string? ownerConsumerId,
         DateTimeOffset timestampUtc)
     {
+        ThrowBadRequest.IfEmpty(consumerGroup, "Partition ownership consumer group");
         ThrowBadRequest.IfEmpty(topic, "Partition ownership topic name");
         ThrowBadRequest.IfNotUtc(timestampUtc, "Partition ownership timestamp");
         
+        ConsumerGroup = consumerGroup;
         Topic = topic;
         Partition = partition;
         OwnerEpoch = ownerEpoch;
@@ -31,12 +35,14 @@ public sealed record ConsumerGroupPartitionOwnership
     }
     
     public static ConsumerGroupPartitionOwnership CreateForNotRegisteredPartition(
+        string consumerGroup,
         string topic,
         int partition,
         string consumerId,
         DateTimeOffset timestampUtc)
     {
         return new ConsumerGroupPartitionOwnership(
+            consumerGroup,
             topic,
             partition,
             InitialPartitionOwnerEpoch,

@@ -42,7 +42,12 @@ public sealed record ConsumerGroupPartitionOwnershipSet
     {
         var ownership = _partitionOwnerships.TryGetValue((topic, partition), out var existingOwnership)
             ? existingOwnership
-            : ConsumerGroupPartitionOwnership.CreateForNotRegisteredPartition(topic, partition, newOwnerConsumerId, timestamp);
+            : ConsumerGroupPartitionOwnership.CreateForNotRegisteredPartition(
+                ConsumerGroup,
+                topic, 
+                partition,
+                newOwnerConsumerId, 
+                timestamp);
 
         ownership.SetNewOwner(
             newOwnerConsumerId,
