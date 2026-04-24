@@ -1,0 +1,146 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 2,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "afjh07oeass8wb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [
+            {
+              "options": {
+                "1": {
+                  "color": "semi-dark-green",
+                  "index": 0,
+                  "text": "On"
+                },
+                "2": {
+                  "color": "semi-dark-red",
+                  "index": 1,
+                  "text": "Off"
+                },
+                "3": {
+                  "index": 2,
+                  "text": "On hold"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": 0
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 28,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.1.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "afjh07oeass8wb"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "round(max by (topic, partition) (zamza_partition_consumption_status{consumer_group=\"${consumerGroupName}\"} * on (server_instance) group_left clamp_max(clamp_min(round(zamza_background_tasks_leadership{task_name=\"PartitionConsumptionStatus\"}), 0), 1)))",
+          "instant": true,
+          "legendFormat": "Topic: {{topic}}, Partition: {{partition}}",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Partitions consumption status",
+      "type": "stat"
+    }
+  ],
+  "preload": false,
+  "refresh": "5s",
+  "schemaVersion": 41,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "consumer_group_test",
+          "value": "consumer_group_test"
+        },
+        "description": "The name of the consumer group",
+        "label": "Name",
+        "name": "consumerGroupName",
+        "options": [
+          {
+            "selected": true,
+            "text": "consumer_group_test",
+            "value": "consumer_group_test"
+          }
+        ],
+        "query": "consumer_group_test",
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Zamza.Server - consumer groups",
+  "uid": "c738b00a-6178-4d55-a482-028aba908df8",
+  "version": 3
+}
