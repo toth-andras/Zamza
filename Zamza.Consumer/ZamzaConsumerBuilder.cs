@@ -13,6 +13,12 @@ using Zamza.Consumer.Options;
 
 namespace Zamza.Consumer;
 
+/// <summary>
+/// Builder class for <see cref="IZamzaConsumer"/>
+/// </summary>
+/// <typeparam name="TKey">Consumed messages' key type.</typeparam>
+/// <typeparam name="TValue">Consumed messages' value type.</typeparam>
+/// <typeparam name="TProcessor">Class encapsulating custom message processing logic.</typeparam>
 public sealed class ZamzaConsumerBuilder<TKey, TValue, TProcessor>
     where TProcessor : IMessageCustomProcessor<TKey, TValue>
 {
