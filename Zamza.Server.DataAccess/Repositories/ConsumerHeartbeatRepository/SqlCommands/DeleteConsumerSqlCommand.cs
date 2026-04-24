@@ -9,8 +9,8 @@ internal sealed class DeleteConsumerSqlCommand
     $"""
         delete from zamza.consumer_heartbeat
         where
-            consumer_group = {nameof(Parameters.ConsumerGroup)} and
-            consumer_id = {nameof(Parameters.ConsumerId)};
+            consumer_group = @{nameof(Parameters.ConsumerGroup)} and
+            consumer_id = @{nameof(Parameters.ConsumerId)};
     """;
 
     public static CommandDefinition BuildCommandDefinition(
