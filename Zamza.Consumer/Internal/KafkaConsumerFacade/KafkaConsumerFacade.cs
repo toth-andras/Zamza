@@ -42,9 +42,16 @@ internal sealed class KafkaConsumerFacade<TKey, TValue> : IKafkaConsumerFacade<T
     
     public void Seek(IReadOnlyCollection<TopicPartitionOffset> offsets)
     {
-        foreach (var offset in offsets)
+        try
         {
-            _consumer.Seek(offset);
+            foreach (var offset in offsets)
+            {
+                _consumer.Seek(offset);
+            }
+        }
+        catch (Exception e)
+        {
+            // pass
         }
     }
     
