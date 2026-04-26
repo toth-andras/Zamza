@@ -1,5 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+    <PropertyGroup>
+      <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+      <Authors>Zamza creators</Authors>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="Google.Protobuf" />
         <PackageReference Include="Grpc.Tools">

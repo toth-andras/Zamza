@@ -67,8 +67,8 @@ internal sealed class KafkaConsumerFacade<TKey, TValue> : IKafkaConsumerFacade<T
 
         try
         {
-            var messages = Enumerable.Range(0, 5)
-                .Select(_ => _consumer.Consume(TimeSpan.FromMilliseconds(100)))
+            var messages = Enumerable.Range(0, 10)
+                .Select(_ => _consumer.Consume(TimeSpan.FromMilliseconds(10)))
                 .Where(res => res is not null)
                 .Select(res => res.ToZamzaMessage(
                     _config.MessageProcessor.MaxRetriesCount,
