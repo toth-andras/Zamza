@@ -21,14 +21,13 @@ var kafkaConfig = new ConsumerConfig
 var consumerBuilder = new ZamzaConsumerBuilder<string, string, MessageProcessor>(
     kafkaConfig,
     zamzaServerUri: new Uri("http://localhost:5000"),
-    topics: ["topic1"]);
+    topics: ["test_topic"]);
 
 consumerBuilder.ConfigureMessageProcessing(
     new MessageProcessingOptions<string, string>
     {
-        MinRetriesGap = TimeSpan.FromSeconds(1),
-        MaxRetriesCount = 4,
-        RetryGapEvaluator = message => TimeSpan.FromSeconds(2 * (message.RetriesCount + 1))
+        MinRetriesGap = TimeSpan.Zero,
+        MaxRetriesCount = 3
     });
 
 var consumer = consumerBuilder.Build(diContainer.BuildServiceProvider());
