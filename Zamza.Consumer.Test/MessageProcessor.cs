@@ -2,17 +2,27 @@ namespace Zamza.Consumer.Test;
 
 public class MessageProcessor : IMessageCustomProcessor<string, string>
 {
+    private int counter = 0;
     public Task<ProcessResult> Process(
         ZamzaMessage<string, string> message,
         CancellationToken cancellationToken)
     {
-        var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-        var source = message.IsFromKafka ? "Kafka" : "Zamza.Server";
-        var retryNumber = message.IsFromKafka ? "" : $"Retry number: {message.RetriesCount + 1}";
-        
+        counter++;
         Console.WriteLine(
-            $"[{timestamp}] Consumed message: {message.Value}. Source: {source}. {retryNumber}");
+            $"Consumed message: {message.Value} Offset: {message.Offset} FromKafka: {message.IsFromKafka}");
 
-        return Task.FromResult(ProcessResult.RetryableFail);
+        var result = counter switch
+        {
+            4 => Task.FromResult(ProcessResult.RetryableFail),
+            5 => Task.FromResult(ProcessResult.CompleteFail),
+
+            _ => Task.FromResult(ProcessResult.Success)
+        };
+
+        if (counter == 5)
+        {
+            counter = 0;
+        }
+        return result;
     }
 }

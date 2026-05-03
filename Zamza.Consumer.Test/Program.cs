@@ -9,8 +9,8 @@ using Zamza.Consumer.Test;
 
 var diContainer = new ServiceCollection();
 diContainer.AddLogging(x => x.AddSimpleConsole());
-diContainer.AddTransient<MessageProcessor>();
 
+diContainer.AddTransient<MessageProcessor>();
 var kafkaConfig = new ConsumerConfig
 {
     GroupId = "consumer_group_test",
@@ -28,6 +28,11 @@ consumerBuilder.ConfigureMessageProcessing(
     {
         MinRetriesGap = TimeSpan.Zero,
         MaxRetriesCount = 3
+    })
+    .ConfigureZamzaFetch(new ZamzaFetchOptions
+    {
+        KafkaConsumesPerZamzaFetch = 5,
+        FetchLimit = 10
     });
 
 var consumer = consumerBuilder.Build(diContainer.BuildServiceProvider());
