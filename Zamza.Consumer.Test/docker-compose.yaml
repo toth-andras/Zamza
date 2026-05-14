@@ -1,19 +1,16 @@
-﻿
+﻿# A docker-compose for local testing.
+# Deploys kafka, kafka-ui and Zamza.Server with database.
 services:
   kafka:
     image: confluentinc/cp-kafka:7.6.0
     container_name: kafka
     ports:
-      - "9092:9092"       # external – your local app connects here
+      - "9092:9092"
     environment:
-      # KRaft mode (no Zookeeper needed)
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       
-      # Two listeners:
-      #   PLAINTEXT      → used inside Docker network (other containers)
-      #   PLAINTEXT_HOST → used by your local app on the host machine
       KAFKA_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://0.0.0.0:9092,CONTROLLER://kafka:9093
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
@@ -24,9 +21,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qg"  # any fixed base64 UUID
-  
-  # Optional: web UI to inspect topics & messages
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qg"
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
@@ -37,4 +32,31 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
     depends_on:
       - kafka
+  
+  postgres:
+    image: postgres
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    networks:
+      - db-network
 
+  zamza:
+    image: andrastot/zamza.server:1.0
+    ports:
+      - 5000:5000
+      - 5249:5249
+      - 9090:9090
+    environment:
+      - DB_CONNECTION_STRING=Username=postgres;Password=postgres;Host=postgres;Port=5432;Database=postgres
+    networks:
+      - db-network
+    depends_on:
+      - postgres
+    
+networks:
+  db-network:
+    driver: bridge
