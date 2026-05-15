@@ -11,4 +11,8 @@
     <ProjectReference Include="..\Zamza.Server.DataAccess\Zamza.Server.DataAccess.csproj" />
     <ProjectReference Include="..\Zamza.Server.Models\Zamza.Server.Models.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Zamza.Server.UnitTests" />
+  </ItemGroup>
 </Project>
