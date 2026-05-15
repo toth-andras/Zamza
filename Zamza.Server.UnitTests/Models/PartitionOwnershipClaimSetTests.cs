@@ -4,7 +4,7 @@ using Zamza.Server.Models.Exceptions;
 
 namespace Zamza.Server.UnitTests.Models;
 
-public class PartitionOwnershipClaimSetTests
+public sealed class PartitionOwnershipClaimSetTests
 {
     [Theory]
     [InlineData(null)]

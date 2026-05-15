@@ -4,7 +4,7 @@ using Zamza.Server.Models.Validators;
 
 namespace Zamza.Server.UnitTests.Models;
 
-public class ThrowBadRequestTests
+public sealed class ThrowBadRequestTests
 {
     [Theory]
     [InlineData(null)]
